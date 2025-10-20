@@ -1,5 +1,6 @@
 // API service for communicating with the backend
-const API_BASE_URL = 'http://localhost:9006/api/v1'
+// Use relative base to go through Caddy proxy (avoids CORS): http://localhost:8086/api/v1
+const API_BASE_URL = '/api/v1'
 
 interface ApiResponse<T = any> {
   success: boolean
@@ -105,8 +106,7 @@ class ApiService {
         ...defaultHeaders,
         ...options.headers,
       },
-      mode: 'cors',
-      credentials: 'include',
+      // Same-origin through Caddy; no explicit CORS mode or credentials needed
     }
 
     try {

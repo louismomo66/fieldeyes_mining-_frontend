@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -52,6 +52,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter()
   const { user, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Prefetch common routes to speed up navigation
+  useEffect(() => {
+    router.prefetch('/dashboard')
+    router.prefetch('/income')
+    router.prefetch('/expenses')
+    router.prefetch('/transactions')
+    router.prefetch('/inventory')
+    router.prefetch('/analytics')
+    router.prefetch('/reports')
+    router.prefetch('/settings')
+  }, [router])
 
   const handleLogout = () => {
     logout()
