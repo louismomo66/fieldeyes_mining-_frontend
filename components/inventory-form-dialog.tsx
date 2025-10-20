@@ -133,7 +133,7 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="currentValue">Current Value (ZMW)</Label>
+            <Label htmlFor="currentValue">Current Value (UGX)</Label>
             <Input
               id="currentValue"
               type="number"

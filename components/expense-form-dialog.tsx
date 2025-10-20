@@ -127,7 +127,7 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount (ZMW)</Label>
+              <Label htmlFor="amount">Amount (UGX)</Label>
               <Input
                 id="amount"
                 type="number"
@@ -176,7 +176,7 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amountPaid">Amount Paid (ZMW)</Label>
+              <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
               <Input
                 id="amountPaid"
                 type="number"

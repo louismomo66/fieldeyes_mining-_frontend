@@ -240,7 +240,7 @@ export default function InventoryPage() {
               const percentage = getStockPercentage(item)
 
               return (
-                <Card key={item.id} className="border-stone-200 hover:shadow-lg transition-shadow">
+                <Card key={item.id || `inventory-${index}`} className="border-stone-200 hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

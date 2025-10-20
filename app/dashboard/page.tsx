@@ -33,6 +33,9 @@ export default function DashboardPage() {
             dataService.getIncomes(),
             dataService.getExpenses()
           ])
+          console.log("Dashboard - Financial Summary from backend:", summary)
+          console.log("Dashboard - Incomes data:", incomesData)
+          console.log("Dashboard - Expenses data:", expensesData)
           setFinancialSummary(summary)
           setIncomes(incomesData)
           setExpenses(expensesData)

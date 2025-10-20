@@ -45,11 +45,13 @@ export default function TransactionsPage() {
         const allTransactions: Transaction[] = [
           ...incomes.map((income) => ({
             ...income,
+            id: `income-${income.id}`, // Prefix with type to ensure uniqueness
             type: "income" as const,
             description: `${income.mineralType} - ${income.customerName}`,
           })),
           ...expenses.map((expense) => ({
             ...expense,
+            id: `expense-${expense.id}`, // Prefix with type to ensure uniqueness
             type: "expense" as const,
             description: `${expense.category} - ${expense.description}`,
             totalAmount: expense.amount,
@@ -307,9 +309,9 @@ export default function TransactionsPage() {
               {filteredTransactions.length === 0 ? (
                 <p className="text-center text-stone-500 py-8">No transactions found</p>
               ) : (
-                filteredTransactions.map((transaction) => (
+                filteredTransactions.map((transaction, index) => (
                   <div
-                    key={transaction.id}
+                    key={transaction.id || `transaction-${transaction.type}-${index}`}
                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-stone-50 border border-stone-200 gap-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center gap-4 flex-1">

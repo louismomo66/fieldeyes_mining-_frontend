@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -22,10 +22,15 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import type { FinancialSummary, MonthlyData, CategoryBreakdown } from "@/lib/types"
 
 export default function AnalyticsPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null)
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
+  const [expenseBreakdown, setExpenseBreakdown] = useState<CategoryBreakdown[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -33,7 +38,33 @@ export default function AnalyticsPage() {
     }
   }, [user, isLoading, router])
 
-  if (isLoading || !user) {
+  useEffect(() => {
+    const loadAnalyticsData = async () => {
+      if (user) {
+        try {
+          const [summary, monthly, breakdown] = await Promise.all([
+            dataService.getFinancialSummary(),
+            dataService.getMonthlyData(),
+            dataService.getExpenseBreakdown()
+          ])
+          console.log("Analytics - Financial Summary from backend:", summary)
+          console.log("Analytics - Monthly Data from backend:", monthly)
+          console.log("Analytics - Expense Breakdown from backend:", breakdown)
+          setFinancialSummary(summary)
+          setMonthlyData(monthly)
+          setExpenseBreakdown(breakdown)
+        } catch (error) {
+          console.error("Error loading analytics data:", error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadAnalyticsData()
+  }, [user])
+
+  if (isLoading || !user || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
@@ -49,17 +80,20 @@ export default function AnalyticsPage() {
     }).format(amount)
   }
 
-  // Calculate totals (using empty arrays for now - will be replaced with real data)
-  const totalIncome = 0 // mockIncomes.reduce((sum, income) => sum + income.totalAmount, 0)
-  const totalExpenses = 0 // mockExpenses.reduce((sum, expense) => sum + expense.amount, 0)
-  const netProfit = totalIncome - totalExpenses
-  const profitMargin = ((netProfit / totalIncome) * 100).toFixed(1)
+  // Calculate totals from real data
+  const totalIncome = financialSummary?.totalIncome || 0
+  const totalExpenses = financialSummary?.totalExpenses || 0
+  const netProfit = financialSummary?.netProfit || 0
+  const profitMargin = financialSummary?.profitMargin || 0
 
   // Income by mineral type (using empty array for now)
   const incomeByMineral: { name: string; value: number }[] = []
 
-  // Expenses by category (using empty array for now)
-  const expensesByCategory: { name: string; value: number }[] = []
+  // Expenses by category from real data
+  const expensesByCategory: { name: string; value: number }[] = expenseBreakdown.map(item => ({
+    name: item.category,
+    value: item.amount
+  }))
 
   // Payment status breakdown (using empty data for now)
   const paymentStatusData = [
@@ -157,7 +191,7 @@ export default function AnalyticsPage() {
               className="h-[400px] w-full min-w-0"
             >
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={400}>
-                <LineChart data={[]}>
+                <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
                   <XAxis dataKey="month" stroke="#78716c" />
                   <YAxis stroke="#78716c" tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`} />

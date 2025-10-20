@@ -32,6 +32,10 @@ export default function IncomePage() {
       if (user) {
         try {
           const data = await dataService.getIncomes()
+          console.log("Income Page - Incomes data from backend:", data)
+          console.log("Income Page - Total incomes count:", data.length)
+          console.log("Income Page - Total income amount:", data.reduce((sum, income) => sum + income.totalAmount, 0))
+          console.log("Income Page - Total receivables:", data.reduce((sum, income) => sum + income.amountDue, 0))
           setIncomes(data)
         } catch (error) {
           console.error("Error loading incomes:", error)
@@ -183,9 +187,9 @@ export default function IncomePage() {
               {filteredIncomes.length === 0 ? (
                 <p className="text-center text-stone-500 py-8">No income records found</p>
               ) : (
-                filteredIncomes.map((income) => (
+                filteredIncomes.map((income, index) => (
                   <div
-                    key={income.id}
+                    key={income.id || `income-${index}`}
                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-stone-50 border border-stone-200 gap-4"
                   >
                     <div className="flex-1 space-y-2">

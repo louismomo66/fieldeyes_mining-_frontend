@@ -7,8 +7,11 @@ export class DataService {
   async getIncomes(): Promise<Income[]> {
     try {
       const response = await apiService.getIncomes()
+      console.log("DataService - Raw incomes response:", response)
       if (response.success && response.data) {
-        return this.transformIncomes(response.data)
+        const transformed = this.transformIncomes(response.data)
+        console.log("DataService - Transformed incomes:", transformed)
+        return transformed
       }
       return []
     } catch (error) {
@@ -44,6 +47,10 @@ export class DataService {
 
   async updateIncome(id: string, income: Omit<Income, "id" | "createdAt">): Promise<Income | null> {
     try {
+      if (!id || id === '' || isNaN(parseInt(id))) {
+        console.error("Invalid income ID for update:", id)
+        return null
+      }
       const response = await apiService.updateIncome(parseInt(id), {
         date: income.date.toISOString().split('T')[0],
         mineral_type: income.mineralType,
@@ -69,6 +76,10 @@ export class DataService {
 
   async deleteIncome(id: string): Promise<boolean> {
     try {
+      if (!id || id === '' || isNaN(parseInt(id))) {
+        console.error("Invalid income ID for deletion:", id)
+        return false
+      }
       const response = await apiService.deleteIncome(parseInt(id))
       return response.success
     } catch (error) {
@@ -117,6 +128,10 @@ export class DataService {
 
   async updateExpense(id: string, expense: Omit<Expense, "id" | "createdAt">): Promise<Expense | null> {
     try {
+      if (!id || id === '' || isNaN(parseInt(id))) {
+        console.error("Invalid expense ID for update:", id)
+        return null
+      }
       const response = await apiService.updateExpense(parseInt(id), {
         date: expense.date.toISOString().split('T')[0],
         category: expense.category,
@@ -141,6 +156,10 @@ export class DataService {
 
   async deleteExpense(id: string): Promise<boolean> {
     try {
+      if (!id || id === '' || isNaN(parseInt(id))) {
+        console.error("Invalid expense ID for deletion:", id)
+        return false
+      }
       const response = await apiService.deleteExpense(parseInt(id))
       return response.success
     } catch (error) {
@@ -186,6 +205,10 @@ export class DataService {
 
   async updateInventoryItem(id: string, item: Omit<InventoryItem, "id" | "createdAt" | "lastUpdated">): Promise<InventoryItem | null> {
     try {
+      if (!id || id === '' || isNaN(parseInt(id))) {
+        console.error("Invalid inventory item ID for update:", id)
+        return null
+      }
       const response = await apiService.updateInventoryItem(parseInt(id), {
         name: item.name,
         type: item.type,
@@ -207,6 +230,10 @@ export class DataService {
 
   async deleteInventoryItem(id: string): Promise<boolean> {
     try {
+      if (!id || id === '' || isNaN(parseInt(id))) {
+        console.error("Invalid inventory item ID for deletion:", id)
+        return false
+      }
       const response = await apiService.deleteInventoryItem(parseInt(id))
       return response.success
     } catch (error) {
@@ -232,8 +259,19 @@ export class DataService {
   async getFinancialSummary(): Promise<FinancialSummary | null> {
     try {
       const response = await apiService.getFinancialSummary()
+      console.log("DataService - Raw financial summary response:", response)
       if (response.success && response.data) {
-        return response.data
+        // Transform snake_case backend response to camelCase frontend interface
+        const transformed = {
+          totalIncome: response.data.total_income,
+          totalExpenses: response.data.total_expenses,
+          netProfit: response.data.net_profit,
+          totalReceivables: response.data.total_receivables,
+          totalPayables: response.data.total_payables,
+          profitMargin: response.data.profit_margin,
+        }
+        console.log("DataService - Transformed financial summary:", transformed)
+        return transformed
       }
       return null
     } catch (error) {
@@ -246,6 +284,7 @@ export class DataService {
     try {
       const response = await apiService.getMonthlyData(year)
       if (response.success && response.data) {
+        // MonthlyData interface already matches backend response format
         return response.data
       }
       return []
@@ -259,6 +298,7 @@ export class DataService {
     try {
       const response = await apiService.getExpenseCategoryBreakdown()
       if (response.success && response.data) {
+        // CategoryBreakdown interface already matches backend response format
         return response.data
       }
       return []
@@ -274,8 +314,16 @@ export class DataService {
   }
 
   private transformIncome(data: any): Income {
+    // Handle different possible ID formats from backend
+    let id = ''
+    if (data.id !== undefined && data.id !== null) {
+      id = data.id.toString()
+    } else if (data.ID !== undefined && data.ID !== null) {
+      id = data.ID.toString()
+    }
+    
     return {
-      id: data.id.toString(),
+      id,
       date: new Date(data.date),
       mineralType: data.mineral_type,
       quantity: data.quantity,
@@ -288,7 +336,7 @@ export class DataService {
       amountPaid: data.amount_paid,
       amountDue: data.amount_due,
       notes: data.notes,
-      userId: data.user_id.toString(),
+      userId: data.user_id ? data.user_id.toString() : '',
       createdAt: new Date(data.created_at),
     }
   }
@@ -298,8 +346,16 @@ export class DataService {
   }
 
   private transformExpense(data: any): Expense {
+    // Handle different possible ID formats from backend
+    let id = ''
+    if (data.id !== undefined && data.id !== null) {
+      id = data.id.toString()
+    } else if (data.ID !== undefined && data.ID !== null) {
+      id = data.ID.toString()
+    }
+    
     return {
-      id: data.id.toString(),
+      id,
       date: new Date(data.date),
       category: data.category,
       description: data.description,
@@ -310,7 +366,7 @@ export class DataService {
       amountPaid: data.amount_paid,
       amountDue: data.amount_due,
       notes: data.notes,
-      userId: data.user_id.toString(),
+      userId: data.user_id ? data.user_id.toString() : '',
       createdAt: new Date(data.created_at),
     }
   }
@@ -320,8 +376,16 @@ export class DataService {
   }
 
   private transformInventoryItem(data: any): InventoryItem {
+    // Handle different possible ID formats from backend
+    let id = ''
+    if (data.id !== undefined && data.id !== null) {
+      id = data.id.toString()
+    } else if (data.ID !== undefined && data.ID !== null) {
+      id = data.ID.toString()
+    }
+    
     return {
-      id: data.id.toString(),
+      id,
       name: data.name,
       type: data.type,
       quantity: data.quantity,
@@ -329,7 +393,7 @@ export class DataService {
       minStockLevel: data.min_stock_level,
       currentValue: data.current_value,
       lastUpdated: new Date(data.last_updated),
-      userId: data.user_id.toString(),
+      userId: data.user_id ? data.user_id.toString() : '',
       createdAt: new Date(data.created_at),
     }
   }

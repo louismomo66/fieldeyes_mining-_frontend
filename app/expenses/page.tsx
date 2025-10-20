@@ -32,6 +32,10 @@ export default function ExpensesPage() {
       if (user) {
         try {
           const data = await dataService.getExpenses()
+          console.log("Expenses Page - Expenses data from backend:", data)
+          console.log("Expenses Page - Total expenses count:", data.length)
+          console.log("Expenses Page - Total expenses amount:", data.reduce((sum, expense) => sum + expense.amount, 0))
+          console.log("Expenses Page - Total payables:", data.reduce((sum, expense) => sum + expense.amountDue, 0))
           setExpenses(data)
         } catch (error) {
           console.error("Error loading expenses:", error)
@@ -184,9 +188,9 @@ export default function ExpensesPage() {
               {filteredExpenses.length === 0 ? (
                 <p className="text-center text-stone-500 py-8">No expense records found</p>
               ) : (
-                filteredExpenses.map((expense) => (
+                filteredExpenses.map((expense, index) => (
                   <div
-                    key={expense.id}
+                    key={expense.id || `expense-${index}`}
                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-stone-50 border border-stone-200 gap-4"
                   >
                     <div className="flex-1 space-y-2">

@@ -16,11 +16,13 @@ export function RecentTransactions({ incomes, expenses }: RecentTransactionsProp
   const allTransactions = [
     ...incomes.map((income) => ({
       ...income,
+      id: `income-${income.id}`, // Prefix with type to ensure uniqueness
       type: "income" as const,
       description: `${income.mineralType} - ${income.customerName}`,
     })),
     ...expenses.map((expense) => ({
       ...expense,
+      id: `expense-${expense.id}`, // Prefix with type to ensure uniqueness
       type: "expense" as const,
       description: `${expense.category} - ${expense.description}`,
       totalAmount: expense.amount,
@@ -65,9 +67,9 @@ export function RecentTransactions({ incomes, expenses }: RecentTransactionsProp
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {allTransactions.map((transaction) => (
+          {allTransactions.map((transaction, index) => (
             <div
-              key={transaction.id}
+              key={transaction.id || `recent-transaction-${transaction.type}-${index}`}
               className="flex items-center justify-between p-4 rounded-lg bg-stone-50 border border-stone-200"
             >
               <div className="flex items-center gap-4 flex-1">

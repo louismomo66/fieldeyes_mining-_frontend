@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast"
 import { Plus } from "lucide-react"
 import type { Income, MineralType, PaymentStatus } from "@/lib/types"
 
+// Currency updated to UGX
+
 interface IncomeFormDialogProps {
   income?: Income
   onSave: (income: Partial<Income>) => void
@@ -142,7 +144,7 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pricePerUnit">Price per Unit (ZMW)</Label>
+              <Label htmlFor="pricePerUnit">Price per Unit (UGX)</Label>
               <Input
                 id="pricePerUnit"
                 type="number"
@@ -158,8 +160,8 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
               <Input
                 value={
                   formData.quantity && formData.pricePerUnit
-                    ? `ZMW ${(Number.parseFloat(formData.quantity) * Number.parseFloat(formData.pricePerUnit)).toLocaleString()}`
-                    : "ZMW 0"
+                    ? `UGX ${(Number.parseFloat(formData.quantity) * Number.parseFloat(formData.pricePerUnit)).toLocaleString()}`
+                    : "UGX 0"
                 }
                 disabled
                 className="bg-stone-50"
@@ -205,7 +207,7 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amountPaid">Amount Paid (ZMW)</Label>
+              <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
               <Input
                 id="amountPaid"
                 type="number"
