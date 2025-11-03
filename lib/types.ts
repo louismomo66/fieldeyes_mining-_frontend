@@ -5,7 +5,6 @@ export interface User {
   id: string
   email: string
   name: string
-  phone?: string
   role: UserRole
   createdAt: Date
 }
@@ -54,11 +53,23 @@ export type Transaction = (Income | Expense) & {
   type: TransactionType
 }
 
+// Production Types
+export type ProductionFrom = "mine" | "processing"
+export type ProcessingMethod =
+  | "crushing" | "milling" | "sieving" | "grading" | "sorting" | "cutting"
+  | "dressing" | "leaching" | "elution" | "refining" | "floatation" | "grinding"
+  | "screening" | "drying" | "exfoliation" | "polishing" | "washing"
+
 // Inventory Types
 export interface InventoryItem {
   id: string
   name: string
   type: "mineral" | "supply"
+  from?: ProductionFrom
+  pitNumber?: string
+  minerName?: string
+  batchNumber?: string
+  processingMethod?: ProcessingMethod
   quantity: number
   unit: string
   minStockLevel: number
@@ -89,4 +100,22 @@ export interface CategoryBreakdown {
   category: string
   amount: number
   percentage: number
+}
+
+// Mine Site Info Types
+export interface MineSiteInfo {
+  id: string
+  owner: string
+  license?: string
+  location: string
+  size?: number
+  number_of_pits?: number
+  commodities?: string
+  equipment?: string
+  employees?: number
+  established_year?: number
+  contact?: string
+  user_id: string
+  created_at: Date
+  updated_at: Date
 }

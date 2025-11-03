@@ -25,7 +25,7 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
 
   const [formData, setFormData] = useState({
     date: expense?.date ? new Date(expense.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-    category: expense?.category || ("equipment" as ExpenseCategory),
+    category: expense?.category || ("labor" as ExpenseCategory),
     description: expense?.description || "",
     amount: expense?.amount?.toString() || "",
     supplierName: expense?.supplierName || "",

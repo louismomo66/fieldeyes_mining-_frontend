@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Plus } from "lucide-react"
-import type { Income, MineralType, PaymentStatus } from "@/lib/types"
+import type { Income, MineralType, PaymentStatus, GemstoneType, SalesType } from "@/lib/types"
 
 // Currency updated to UGX
 
@@ -27,7 +27,10 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
 
   const [formData, setFormData] = useState({
     date: income?.date ? new Date(income.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+    itemName: income?.itemName || "",
     mineralType: income?.mineralType || ("gold" as MineralType),
+    gemstoneType: income?.gemstoneType || ("" as GemstoneType | ""),
+    salesType: income?.salesType || ("mineral" as SalesType),
     quantity: income?.quantity?.toString() || "",
     unit: income?.unit || "kg",
     pricePerUnit: income?.pricePerUnit?.toString() || "",
@@ -50,7 +53,10 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
     const incomeData: Partial<Income> = {
       ...income,
       date: new Date(formData.date),
+      itemName: formData.itemName || undefined,
       mineralType: formData.mineralType,
+      gemstoneType: formData.mineralType === "gemstones" && formData.gemstoneType ? formData.gemstoneType : undefined,
+      salesType: formData.salesType,
       quantity,
       unit: formData.unit,
       pricePerUnit,
@@ -66,8 +72,8 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
     onSave(incomeData)
     setOpen(false)
     toast({
-      title: income ? "Income updated" : "Income added",
-      description: `Successfully ${income ? "updated" : "added"} income record.`,
+      title: income ? "Sales updated" : "Sales added",
+      description: `Successfully ${income ? "updated" : "added"} sales record.`,
     })
   }
 
@@ -77,15 +83,15 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
         {trigger || (
           <Button className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white">
             <Plus className="h-4 w-4 mr-2" />
-            Add Income
+            Add Sales
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{income ? "Edit Income" : "Add New Income"}</DialogTitle>
+          <DialogTitle>{income ? "Edit Sales" : "Add New Sales"}</DialogTitle>
           <DialogDescription>
-            {income ? "Update the income record details below." : "Fill in the details to add a new income record."}
+            {income ? "Update the sales record details below." : "Fill in the details to add a new sales record."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -102,10 +108,20 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="itemName">Item Name</Label>
+              <Input
+                id="itemName"
+                value={formData.itemName}
+                onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
+                placeholder="e.g., Gold Ore, Iron Ore, Lead, Zinc, Lithium, Nickel, Coltan, Tin, Wolfram, Titanium, Manganese, Rare Earth Elements, Uranium, Bentonite, Diatomite, Graphite, Gypsum, Feldspar, Limestone, Marble, Kaolin, Phosphates, Pozzolana, Salt, Sand, Vermiculite, Silver, Granite, Chromite, Gemstones"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="mineralType">Mineral Type</Label>
               <Select
                 value={formData.mineralType}
-                onValueChange={(value) => setFormData({ ...formData, mineralType: value as MineralType })}
+                onValueChange={(value) => setFormData({ ...formData, mineralType: value as MineralType, gemstoneType: value === "gemstones" ? formData.gemstoneType : "" })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -115,7 +131,82 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
                   <SelectItem value="copper">Copper</SelectItem>
                   <SelectItem value="cobalt">Cobalt</SelectItem>
                   <SelectItem value="diamond">Diamond</SelectItem>
+                  <SelectItem value="iron_ore">Iron Ore</SelectItem>
+                  <SelectItem value="lead">Lead</SelectItem>
+                  <SelectItem value="zinc">Zinc</SelectItem>
+                  <SelectItem value="lithium">Lithium</SelectItem>
+                  <SelectItem value="nickel">Nickel</SelectItem>
+                  <SelectItem value="coltan">Coltan</SelectItem>
+                  <SelectItem value="tin">Tin</SelectItem>
+                  <SelectItem value="wolfram">Wolfram</SelectItem>
+                  <SelectItem value="titanium">Titanium</SelectItem>
+                  <SelectItem value="manganese">Manganese</SelectItem>
+                  <SelectItem value="rare_earth_elements">Rare Earth Elements</SelectItem>
+                  <SelectItem value="uranium">Uranium</SelectItem>
+                  <SelectItem value="bentonite">Bentonite</SelectItem>
+                  <SelectItem value="diatomite">Diatomite</SelectItem>
+                  <SelectItem value="graphite">Graphite</SelectItem>
+                  <SelectItem value="gypsum">Gypsum</SelectItem>
+                  <SelectItem value="feldspar">Feldspar</SelectItem>
+                  <SelectItem value="limestone">Limestone</SelectItem>
+                  <SelectItem value="marble">Marble</SelectItem>
+                  <SelectItem value="kaolin">Kaolin</SelectItem>
+                  <SelectItem value="phosphates">Phosphates</SelectItem>
+                  <SelectItem value="pozzolana">Pozzolana</SelectItem>
+                  <SelectItem value="salt">Salt</SelectItem>
+                  <SelectItem value="sand">Sand</SelectItem>
+                  <SelectItem value="vermiculite">Vermiculite</SelectItem>
+                  <SelectItem value="silver">Silver</SelectItem>
+                  <SelectItem value="granite">Granite</SelectItem>
+                  <SelectItem value="chromite">Chromite</SelectItem>
+                  <SelectItem value="gemstones">Gemstones</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.mineralType === "gemstones" && (
+              <div className="space-y-2">
+                <Label htmlFor="gemstoneType">Gemstone Type</Label>
+                <Select
+                  value={formData.gemstoneType || ""}
+                  onValueChange={(value) => setFormData({ ...formData, gemstoneType: value as GemstoneType })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gemstone type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="apatite">Apatite</SelectItem>
+                    <SelectItem value="beryl">Beryl</SelectItem>
+                    <SelectItem value="aquamarine">Aquamarine</SelectItem>
+                    <SelectItem value="ruby">Ruby</SelectItem>
+                    <SelectItem value="sapphire">Sapphire</SelectItem>
+                    <SelectItem value="flourite">Flourite</SelectItem>
+                    <SelectItem value="garnet">Garnet</SelectItem>
+                    <SelectItem value="opal">Opal</SelectItem>
+                    <SelectItem value="quartz">Quartz</SelectItem>
+                    <SelectItem value="topaz">Topaz</SelectItem>
+                    <SelectItem value="tourmaline">Tourmaline</SelectItem>
+                    <SelectItem value="zircon">Zircon</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="salesType">Type</Label>
+              <Select
+                value={formData.salesType}
+                onValueChange={(value) => setFormData({ ...formData, salesType: value as SalesType })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mineral">Mineral</SelectItem>
+                  <SelectItem value="supply">Supply</SelectItem>
+                  <SelectItem value="concentrates">Concentrates</SelectItem>
+                  <SelectItem value="tailings">Tailings</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -134,13 +225,21 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
 
             <div className="space-y-2">
               <Label htmlFor="unit">Unit</Label>
-              <Input
-                id="unit"
+              <Select
                 value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                placeholder="kg, tons, etc."
-                required
-              />
+                onValueChange={(value) => setFormData({ ...formData, unit: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="g">Grams (g)</SelectItem>
+                  <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                  <SelectItem value="ct">Carats (ct)</SelectItem>
+                  <SelectItem value="oz">Ounces (oz)</SelectItem>
+                  <SelectItem value="tonnes">Tonnes</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -238,7 +337,7 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
               type="submit"
               className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white"
             >
-              {income ? "Update Income" : "Add Income"}
+              {income ? "Update Sales" : "Add Sale"}
             </Button>
           </div>
         </form>

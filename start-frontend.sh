@@ -26,3 +26,6 @@ echo "Backend is running. Starting frontend development server..."
 
 # Start the development server
 npm run dev
+
+
+

@@ -10,8 +10,8 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Mining Finance System",
-  description: "Comprehensive finance management for mining operations",
+  title: "Mine Manager",
+  description: "Comprehensive management for mining operations",
   generator: "v0.app",
 }
 

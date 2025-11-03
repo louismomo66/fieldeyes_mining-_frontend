@@ -4,15 +4,18 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { ExpenseFormDialog } from "@/components/expense-form-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { dataService } from "@/lib/data-service"
-import { Edit, Trash2, Search } from "lucide-react"
+import { Edit, Trash2, Search, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Expense } from "@/lib/types"
+import type { Expense, ExpenseCategory, PaymentStatus } from "@/lib/types"
+import { toast } from "sonner"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function ExpensesPage() {
   const { user, isLoading } = useAuth()
@@ -20,6 +23,19 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split("T")[0],
+    category: "labor" as ExpenseCategory,
+    description: "",
+    amount: "",
+    supplierName: "",
+    supplierContact: "",
+    paymentStatus: "unpaid" as PaymentStatus,
+    amountPaid: "0",
+    notes: "",
+  })
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -56,24 +72,81 @@ export default function ExpensesPage() {
     )
   }
 
-  const handleSave = async (expenseData: Partial<Expense>) => {
+  const resetForm = () => {
+    setFormData({
+      date: new Date().toISOString().split("T")[0],
+      category: "labor",
+      description: "",
+      amount: "",
+      supplierName: "",
+      supplierContact: "",
+      paymentStatus: "unpaid",
+      amountPaid: "0",
+      notes: "",
+    })
+    setEditingExpense(null)
+  }
+
+  const saveExpense = async (expenseData: Partial<Expense>) => {
     try {
       if (expenseData.id) {
         // Update existing
         const updatedExpense = await dataService.updateExpense(expenseData.id, expenseData as Omit<Expense, "id" | "createdAt">)
         if (updatedExpense) {
           setExpenses(expenses.map((exp) => (exp.id === expenseData.id ? updatedExpense : exp)))
+          window.dispatchEvent(new CustomEvent('expensesUpdated', { detail: { id: expenseData.id } }))
+          toast.success("Expense record updated successfully!")
         }
       } else {
         // Add new
         const newExpense = await dataService.createExpense(expenseData as Omit<Expense, "id" | "createdAt">)
         if (newExpense) {
           setExpenses([newExpense, ...expenses])
+          window.dispatchEvent(new CustomEvent('expensesUpdated', { detail: { id: newExpense.id } }))
+          toast.success("Expense record added successfully!")
         }
       }
     } catch (error) {
       console.error("Error saving expense:", error)
+      toast.error("Failed to save expense record")
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const amount = Number.parseFloat(formData.amount)
+    const amountPaid = Number.parseFloat(formData.amountPaid)
+
+    if (Number.isNaN(amount) || amount < 0) {
+      toast.error("Please enter a valid amount")
+      return
+    }
+
+    if (Number.isNaN(amountPaid) || amountPaid < 0) {
+      toast.error("Please enter a valid amount paid")
+      return
+    }
+
+    const amountDue = Math.max(0, amount - amountPaid)
+
+    const payload: Partial<Expense> = {
+      id: editingExpense?.id,
+      date: new Date(formData.date),
+      category: formData.category,
+      description: formData.description,
+      amount,
+      supplierName: formData.supplierName,
+      supplierContact: formData.supplierContact || undefined,
+      paymentStatus: formData.paymentStatus,
+      amountPaid,
+      amountDue,
+      notes: formData.notes || undefined,
+    }
+
+    await saveExpense(payload)
+    resetForm()
+    setShowForm(false)
   }
 
   const handleDelete = async (id: string) => {
@@ -82,6 +155,8 @@ export default function ExpensesPage() {
         const success = await dataService.deleteExpense(id)
         if (success) {
           setExpenses(expenses.filter((exp) => exp.id !== id))
+          window.dispatchEvent(new CustomEvent('expensesUpdated', { detail: { id } }))
+          toast.success("Expense record deleted")
         }
       } catch (error) {
         console.error("Error deleting expense:", error)
@@ -127,6 +202,28 @@ export default function ExpensesPage() {
 
   const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
   const totalPayables = filteredExpenses.reduce((sum, expense) => sum + expense.amountDue, 0)
+  const computedAmountDue = (() => {
+    const amount = Number.parseFloat(formData.amount)
+    const amountPaid = Number.parseFloat(formData.amountPaid)
+    if (Number.isNaN(amount) || Number.isNaN(amountPaid)) return ""
+    return Math.max(0, amount - amountPaid).toString()
+  })()
+
+  const handleEdit = (expense: Expense) => {
+    setEditingExpense(expense)
+    setShowForm(true)
+    setFormData({
+      date: new Date(expense.date).toISOString().split("T")[0],
+      category: expense.category,
+      description: expense.description,
+      amount: expense.amount.toString(),
+      supplierName: expense.supplierName,
+      supplierContact: expense.supplierContact || "",
+      paymentStatus: expense.paymentStatus,
+      amountPaid: expense.amountPaid.toString(),
+      notes: expense.notes || "",
+    })
+  }
 
   return (
     <DashboardLayout>
@@ -134,10 +231,185 @@ export default function ExpensesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-stone-900 mb-2">Expense Management</h1>
-            <p className="text-stone-600">Track and manage mining operation costs</p>
+            <p className="text-stone-600">Track and manage mining operation costs across labour, fuel, maintenance, and more</p>
+            <p className="text-sm text-stone-600 mt-1">💡 To capture wages previously recorded in production, add them here under the <strong>Labor</strong> category.</p>
           </div>
-          <ExpenseFormDialog onSave={handleSave} />
+          <Button
+            onClick={() => {
+              if (showForm) {
+                setShowForm(false)
+                resetForm()
+              } else {
+                setShowForm(true)
+              }
+            }}
+            className="gap-2 shadow-md bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
+            size="lg"
+          >
+            <Plus className="h-5 w-5" />
+            {showForm ? "Close Form" : "Add Expense"}
+          </Button>
         </div>
+
+        {showForm && (
+          <Card className="border-stone-200">
+            <CardHeader>
+              <CardTitle>{editingExpense ? "Edit Expense" : "Add New Expense"}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Date</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value as ExpenseCategory })}
+                    >
+                      <SelectTrigger className="border-stone-300">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="labor">Labor</SelectItem>
+                        <SelectItem value="fuel">Fuel</SelectItem>
+                        <SelectItem value="equipment">Equipment</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="transport">Transport</SelectItem>
+                        <SelectItem value="chemicals">Chemicals</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Input
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Brief description of the expense"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount (UGX)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
+                    <Input
+                      id="amountPaid"
+                      type="number"
+                      step="0.01"
+                      value={formData.amountPaid}
+                      onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentStatus">Payment Status</Label>
+                    <Select
+                      value={formData.paymentStatus}
+                      onValueChange={(value) => setFormData({ ...formData, paymentStatus: value as PaymentStatus })}
+                    >
+                      <SelectTrigger className="border-stone-300">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="partial">Partial</SelectItem>
+                        <SelectItem value="unpaid">Unpaid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="amountDue">Amount Due (UGX)</Label>
+                    <Input
+                      id="amountDue"
+                      type="number"
+                      value={computedAmountDue}
+                      readOnly
+                      className="bg-stone-50"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="supplierName">Supplier Name / Recipient</Label>
+                    <Input
+                      id="supplierName"
+                      value={formData.supplierName}
+                      onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
+                      placeholder="e.g., Labour Team Alpha"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="supplierContact">Contact Information (Optional)</Label>
+                    <Input
+                      id="supplierContact"
+                      value={formData.supplierContact}
+                      onChange={(e) => setFormData({ ...formData, supplierContact: e.target.value })}
+                      placeholder="Phone or Email"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes (Optional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Additional information about this expense"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      resetForm()
+                      setShowForm(false)
+                    }}
+                    className="border-stone-300"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
+                  >
+                    {editingExpense ? "Update Expense" : "Add Expense"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -217,15 +489,9 @@ export default function ExpensesPage() {
                         <p className="text-xs text-stone-600">Paid: {formatCurrency(expense.amountPaid)}</p>
                       </div>
                       <div className="flex gap-2">
-                        <ExpenseFormDialog
-                          expense={expense}
-                          onSave={handleSave}
-                          trigger={
-                            <Button variant="outline" size="icon">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          }
-                        />
+                        <Button variant="outline" size="icon" onClick={() => handleEdit(expense)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
                         <Button variant="outline" size="icon" onClick={() => handleDelete(expense.id)}>
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>

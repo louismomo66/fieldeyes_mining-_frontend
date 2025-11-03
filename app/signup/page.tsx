@@ -64,14 +64,14 @@ export default function SignupPage() {
           <div className="mx-auto w-16 h-16">
             <Image
               src="/logo.png"
-              alt="Mining Finance Logo"
+              alt="Mine Manager Logo"
               width={64}
               height={64}
               className="w-full h-full object-contain"
             />
           </div>
           <CardTitle className="text-3xl font-bold text-stone-900">Create Account</CardTitle>
-          <CardDescription className="text-stone-600">Join Mining Finance to manage your operations</CardDescription>
+          <CardDescription className="text-stone-600">Join Mine Manager to manage your operations</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

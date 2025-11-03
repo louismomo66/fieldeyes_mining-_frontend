@@ -1,6 +1,6 @@
 // Data service for managing application data with API calls
 import { apiService } from "./api"
-import type { Income, Expense, InventoryItem, FinancialSummary, MonthlyData, CategoryBreakdown } from "./types"
+import type { Income, Expense, InventoryItem, FinancialSummary, MonthlyData, CategoryBreakdown, MineSiteInfo } from "./types"
 
 export class DataService {
   // Income methods
@@ -57,10 +57,12 @@ export class DataService {
         quantity: income.quantity,
         unit: income.unit,
         price_per_unit: income.pricePerUnit,
+        total_amount: income.totalAmount,
         customer_name: income.customerName,
         customer_contact: income.customerContact,
         payment_status: income.paymentStatus,
         amount_paid: income.amountPaid,
+        amount_due: income.amountDue,
         notes: income.notes,
       })
       
@@ -182,15 +184,24 @@ export class DataService {
     }
   }
 
-  async createInventoryItem(item: Omit<InventoryItem, "id" | "createdAt" | "lastUpdated">): Promise<InventoryItem | null> {
+  async createInventoryItem(item: Omit<InventoryItem, "id" | "createdAt" | "userId">): Promise<InventoryItem | null> {
     try {
+      // Format lastUpdated as date string if available
+      const lastUpdatedStr = item.lastUpdated ? new Date(item.lastUpdated).toISOString().split("T")[0] : undefined
+      
       const response = await apiService.createInventoryItem({
         name: item.name,
         type: item.type,
+        from: item.from,
+        pit_number: item.pitNumber,
+        miner_name: item.minerName,
+        batch_number: item.batchNumber,
+        processing_method: item.processingMethod,
         quantity: item.quantity,
         unit: item.unit,
         min_stock_level: item.minStockLevel,
         current_value: item.currentValue,
+        last_updated: lastUpdatedStr,
       })
       
       if (response.success && response.data) {
@@ -203,19 +214,29 @@ export class DataService {
     }
   }
 
-  async updateInventoryItem(id: string, item: Omit<InventoryItem, "id" | "createdAt" | "lastUpdated">): Promise<InventoryItem | null> {
+  async updateInventoryItem(id: string, item: Omit<InventoryItem, "id" | "createdAt" | "userId">): Promise<InventoryItem | null> {
     try {
       if (!id || id === '' || isNaN(parseInt(id))) {
         console.error("Invalid inventory item ID for update:", id)
         return null
       }
+      
+      // Format lastUpdated as date string if available
+      const lastUpdatedStr = item.lastUpdated ? new Date(item.lastUpdated).toISOString().split("T")[0] : undefined
+      
       const response = await apiService.updateInventoryItem(parseInt(id), {
         name: item.name,
         type: item.type,
+        from: item.from,
+        pit_number: item.pitNumber,
+        miner_name: item.minerName,
+        batch_number: item.batchNumber,
+        processing_method: item.processingMethod,
         quantity: item.quantity,
         unit: item.unit,
         min_stock_level: item.minStockLevel,
         current_value: item.currentValue,
+        last_updated: lastUpdatedStr,
       })
       
       if (response.success && response.data) {
@@ -388,6 +409,11 @@ export class DataService {
       id,
       name: data.name,
       type: data.type,
+      from: data.from || undefined,
+      pitNumber: data.pit_number || data.pitNumber || undefined,
+      minerName: data.miner_name || data.minerName || undefined,
+      batchNumber: data.batch_number || data.batchNumber || undefined,
+      processingMethod: data.processing_method || data.processingMethod || undefined,
       quantity: data.quantity,
       unit: data.unit,
       minStockLevel: data.min_stock_level,
@@ -395,6 +421,71 @@ export class DataService {
       lastUpdated: new Date(data.last_updated),
       userId: data.user_id ? data.user_id.toString() : '',
       createdAt: new Date(data.created_at),
+    }
+  }
+
+  // Mine site info methods
+  async getMineSiteInfo(): Promise<MineSiteInfo | null> {
+    try {
+      const response = await apiService.getMineSiteInfo()
+      if (response.success && response.data) {
+        return this.transformMineSiteInfo(response.data)
+      }
+      return null
+    } catch (error) {
+      console.error("Error fetching mine site info:", error)
+      return null
+    }
+  }
+
+  async createOrUpdateMineSiteInfo(info: Omit<MineSiteInfo, "id" | "created_at" | "updated_at" | "user_id">): Promise<MineSiteInfo | null> {
+    try {
+      const response = await apiService.createOrUpdateMineSiteInfo({
+        owner: info.owner,
+        license: info.license,
+        location: info.location,
+        size: info.size,
+        number_of_pits: info.number_of_pits,
+        commodities: info.commodities,
+        equipment: info.equipment,
+        employees: info.employees,
+        established_year: info.established_year,
+        contact: info.contact,
+      })
+      
+      if (response.success && response.data) {
+        return this.transformMineSiteInfo(response.data)
+      }
+      return null
+    } catch (error) {
+      console.error("Error creating/updating mine site info:", error)
+      return null
+    }
+  }
+
+  private transformMineSiteInfo(data: any): MineSiteInfo {
+    let id = ''
+    if (data.id !== undefined && data.id !== null) {
+      id = data.id.toString()
+    } else if (data.ID !== undefined && data.ID !== null) {
+      id = data.ID.toString()
+    }
+
+    return {
+      id,
+      owner: data.owner,
+      license: data.license || undefined,
+      location: data.location,
+      size: data.size || undefined,
+      number_of_pits: data.number_of_pits || data.numberOfPits || undefined,
+      commodities: data.commodities || undefined,
+      equipment: data.equipment || undefined,
+      employees: data.employees || undefined,
+      established_year: data.established_year || data.establishedYear || undefined,
+      contact: data.contact || undefined,
+      user_id: data.user_id ? data.user_id.toString() : (data.userID ? data.userID.toString() : ''),
+      created_at: new Date(data.created_at || data.createdAt),
+      updated_at: new Date(data.updated_at || data.updatedAt),
     }
   }
 }

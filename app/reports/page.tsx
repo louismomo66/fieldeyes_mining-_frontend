@@ -4,17 +4,22 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { dataService } from "@/lib/data-service"
-import { FileText, Download, Printer } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FileText, Download, DollarSign, TrendingUp, BarChart3 } from "lucide-react"
+import { TrialBalance } from "@/components/trial-balance"
+import { SalesReport } from "@/components/sales-report"
+import { ProductionReport } from "@/components/production-report"
+import { ExpenseReport } from "@/components/expense-report"
+import { FinancialSummaryReport } from "@/components/financial-summary-report"
 
 export default function ReportsPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [reportPeriod, setReportPeriod] = useState<"month" | "quarter" | "year">("month")
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -30,367 +35,95 @@ export default function ReportsPage() {
     )
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }).format(date)
-  }
-
-  // Calculate financial data
-  const totalIncome = 0 // mockIncomes.reduce((sum, income) => sum + income.totalAmount, 0)
-  const totalExpenses = 0 // mockExpenses.reduce((sum, expense) => sum + expense.amount, 0)
-  const netProfit = totalIncome - totalExpenses
-  const profitMargin = ((netProfit / totalIncome) * 100).toFixed(1)
-
-  const totalReceivables = 0 // mockIncomes.reduce((sum, income) => sum + income.amountDue, 0)
-  const totalPayables = 0 // mockExpenses.reduce((sum, expense) => sum + expense.amountDue, 0)
-
-  const inventoryValue = 0 // mockInventory.reduce((sum, item) => sum + item.currentValue, 0)
-
-  // Group expenses by category (using empty object for now)
-  const expensesByCategory: Record<string, number> = {}
-
-  // Group income by mineral (using empty object for now)
-  const incomeByMineral: Record<string, number> = {}
-
-  const handlePrint = () => {
-    window.print()
-  }
-
-  const handleDownloadPDF = () => {
-    alert("PDF download functionality would be implemented with a library like jsPDF or react-pdf")
+  // Generate year options (current year and 4 previous years)
+  const yearOptions = []
+  const currentYear = new Date().getFullYear()
+  for (let i = 0; i < 5; i++) {
+    yearOptions.push(currentYear - i)
   }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Header with Instructions */}
+        <div className="rounded-lg border-l-4 border-amber-600 bg-amber-50/50 p-4">
+          <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-stone-900 mb-2">Financial Reports</h1>
-            <p className="text-stone-600">Generate and view comprehensive financial reports</p>
+              <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-2">
+                <FileText className="h-8 w-8 text-amber-600" />
+                Reports & Financial Statements
+              </h1>
+              <p className="text-stone-600 mt-1">
+                📊 <strong>What to do here:</strong> Generate and export financial reports, trial balance, and operational summaries
+              </p>
+              <p className="text-sm text-stone-600 mt-2">
+                💡 Select a report type from the tabs below, then click the Export button to download
+              </p>
           </div>
           <div className="flex gap-2">
-            <Select value={reportPeriod} onValueChange={(value: any) => setReportPeriod(value)}>
-              <SelectTrigger className="w-[150px]">
+              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                <SelectTrigger className="w-[120px] border-stone-300">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="quarter">This Quarter</SelectItem>
-                <SelectItem value="year">This Year</SelectItem>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" />
-              Print
-            </Button>
-            <Button
-              onClick={handleDownloadPDF}
-              className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF
-            </Button>
+            </div>
           </div>
         </div>
 
-        <Tabs defaultValue="profit-loss" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto">
-            <TabsTrigger value="profit-loss">P&L Statement</TabsTrigger>
-            <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
-            <TabsTrigger value="cash-flow">Cash Flow</TabsTrigger>
-            <TabsTrigger value="tax">Tax Report</TabsTrigger>
+        <Tabs defaultValue="trial-balance" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-2">
+            <TabsTrigger value="trial-balance" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Trial Balance</span>
+              <span className="sm:hidden">Trial</span>
+            </TabsTrigger>
+            <TabsTrigger value="sales" className="gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">Sales Report</span>
+              <span className="sm:hidden">Sales</span>
+            </TabsTrigger>
+            <TabsTrigger value="production" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">Production</span>
+              <span className="sm:hidden">Prod</span>
+            </TabsTrigger>
+            <TabsTrigger value="expenses" className="gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Expenses</span>
+              <span className="sm:hidden">Exp</span>
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Financial</span>
+              <span className="sm:hidden">Fin</span>
+            </TabsTrigger>
           </TabsList>
 
-          {/* Profit & Loss Statement */}
-          <TabsContent value="profit-loss" className="space-y-6">
-            <Card className="border-stone-200">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">Profit & Loss Statement</CardTitle>
-                    <CardDescription>
-                      Period: {formatDate(new Date())} | Generated by {user.name}
-                    </CardDescription>
-                  </div>
-                  <FileText className="h-8 w-8 text-stone-400" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Revenue Section */}
-                <div>
-                  <h3 className="text-lg font-bold text-stone-900 mb-4 pb-2 border-b-2 border-stone-200">Revenue</h3>
-                  <div className="space-y-3">
-                    {Object.entries(incomeByMineral).map(([mineral, amount]) => (
-                      <div key={mineral} className="flex justify-between items-center pl-4">
-                        <span className="text-stone-700 capitalize">{mineral} Sales</span>
-                        <span className="font-medium text-stone-900">{formatCurrency(amount)}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-center pt-3 border-t border-stone-200 font-bold">
-                      <span className="text-stone-900">Total Revenue</span>
-                      <span className="text-emerald-700 text-lg">{formatCurrency(totalIncome)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expenses Section */}
-                <div>
-                  <h3 className="text-lg font-bold text-stone-900 mb-4 pb-2 border-b-2 border-stone-200">
-                    Operating Expenses
-                  </h3>
-                  <div className="space-y-3">
-                    {Object.entries(expensesByCategory).map(([category, amount]) => (
-                      <div key={category} className="flex justify-between items-center pl-4">
-                        <span className="text-stone-700 capitalize">{category}</span>
-                        <span className="font-medium text-stone-900">{formatCurrency(amount)}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-center pt-3 border-t border-stone-200 font-bold">
-                      <span className="text-stone-900">Total Expenses</span>
-                      <span className="text-red-700 text-lg">{formatCurrency(totalExpenses)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Net Profit Section */}
-                <div className="bg-stone-50 p-6 rounded-lg border-2 border-stone-200">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-lg">
-                      <span className="font-bold text-stone-900">Net Profit</span>
-                      <span className="font-bold text-stone-900 text-xl">{formatCurrency(netProfit)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-700">Profit Margin</span>
-                      <span className="font-semibold text-stone-900">{profitMargin}%</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="trial-balance">
+            <TrialBalance selectedYear={selectedYear} />
           </TabsContent>
 
-          {/* Balance Sheet */}
-          <TabsContent value="balance-sheet" className="space-y-6">
-            <Card className="border-stone-200">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">Balance Sheet</CardTitle>
-                    <CardDescription>
-                      As of {formatDate(new Date())} | Generated by {user.name}
-                    </CardDescription>
-                  </div>
-                  <FileText className="h-8 w-8 text-stone-400" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Assets */}
-                <div>
-                  <h3 className="text-lg font-bold text-stone-900 mb-4 pb-2 border-b-2 border-stone-200">Assets</h3>
-                  <div className="space-y-3">
-                    <div className="pl-4">
-                      <h4 className="font-semibold text-stone-800 mb-2">Current Assets</h4>
-                      <div className="space-y-2 pl-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-stone-700">Cash & Receivables</span>
-                          <span className="font-medium text-stone-900">{formatCurrency(totalReceivables)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-stone-700">Inventory</span>
-                          <span className="font-medium text-stone-900">{formatCurrency(inventoryValue)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t border-stone-200 font-bold">
-                      <span className="text-stone-900">Total Assets</span>
-                      <span className="text-emerald-700 text-lg">
-                        {formatCurrency(totalReceivables + inventoryValue)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Liabilities */}
-                <div>
-                  <h3 className="text-lg font-bold text-stone-900 mb-4 pb-2 border-b-2 border-stone-200">
-                    Liabilities
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="pl-4">
-                      <h4 className="font-semibold text-stone-800 mb-2">Current Liabilities</h4>
-                      <div className="space-y-2 pl-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-stone-700">Accounts Payable</span>
-                          <span className="font-medium text-stone-900">{formatCurrency(totalPayables)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t border-stone-200 font-bold">
-                      <span className="text-stone-900">Total Liabilities</span>
-                      <span className="text-red-700 text-lg">{formatCurrency(totalPayables)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Equity */}
-                <div className="bg-stone-50 p-6 rounded-lg border-2 border-stone-200">
-                  <div className="flex justify-between items-center text-lg">
-                    <span className="font-bold text-stone-900">Net Equity</span>
-                    <span className="font-bold text-stone-900 text-xl">
-                      {formatCurrency(totalReceivables + inventoryValue - totalPayables)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="sales">
+            <SalesReport selectedYear={selectedYear} />
           </TabsContent>
 
-          {/* Cash Flow */}
-          <TabsContent value="cash-flow" className="space-y-6">
-            <Card className="border-stone-200">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">Cash Flow Statement</CardTitle>
-                    <CardDescription>
-                      Period: {formatDate(new Date())} | Generated by {user.name}
-                    </CardDescription>
-                  </div>
-                  <FileText className="h-8 w-8 text-stone-400" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Operating Activities */}
-                <div>
-                  <h3 className="text-lg font-bold text-stone-900 mb-4 pb-2 border-b-2 border-stone-200">
-                    Operating Activities
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center pl-4">
-                      <span className="text-stone-700">Cash from Sales</span>
-                      <span className="font-medium text-emerald-700">
-                        {formatCurrency(totalIncome - totalReceivables)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pl-4">
-                      <span className="text-stone-700">Cash for Expenses</span>
-                      <span className="font-medium text-red-700">
-                        ({formatCurrency(totalExpenses - totalPayables)})
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t border-stone-200 font-bold">
-                      <span className="text-stone-900">Net Cash from Operations</span>
-                      <span className="text-stone-900 text-lg">
-                        {formatCurrency(totalIncome - totalReceivables - (totalExpenses - totalPayables))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="bg-stone-50 p-6 rounded-lg border-2 border-stone-200">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-700">Beginning Cash Balance</span>
-                      <span className="font-medium text-stone-900">{formatCurrency(0)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-stone-700">Net Change in Cash</span>
-                      <span className="font-medium text-stone-900">
-                        {formatCurrency(totalIncome - totalReceivables - (totalExpenses - totalPayables))}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t-2 border-stone-300 text-lg">
-                      <span className="font-bold text-stone-900">Ending Cash Balance</span>
-                      <span className="font-bold text-stone-900 text-xl">
-                        {formatCurrency(totalIncome - totalReceivables - (totalExpenses - totalPayables))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="production">
+            <ProductionReport selectedYear={selectedYear} />
           </TabsContent>
 
-          {/* Tax Report */}
-          <TabsContent value="tax" className="space-y-6">
-            <Card className="border-stone-200">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">Tax Report</CardTitle>
-                    <CardDescription>
-                      Period: {formatDate(new Date())} | Generated by {user.name}
-                    </CardDescription>
-                  </div>
-                  <FileText className="h-8 w-8 text-stone-400" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Income Summary */}
-                <div>
-                  <h3 className="text-lg font-bold text-stone-900 mb-4 pb-2 border-b-2 border-stone-200">
-                    Taxable Income
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center pl-4">
-                      <span className="text-stone-700">Gross Revenue</span>
-                      <span className="font-medium text-stone-900">{formatCurrency(totalIncome)}</span>
-                    </div>
-                    <div className="flex justify-between items-center pl-4">
-                      <span className="text-stone-700">Deductible Expenses</span>
-                      <span className="font-medium text-stone-900">({formatCurrency(totalExpenses)})</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t border-stone-200 font-bold">
-                      <span className="text-stone-900">Net Taxable Income</span>
-                      <span className="text-stone-900 text-lg">{formatCurrency(netProfit)}</span>
-                    </div>
-                  </div>
-                </div>
+          <TabsContent value="expenses">
+            <ExpenseReport selectedYear={selectedYear} />
+          </TabsContent>
 
-                {/* Tax Calculation */}
-                <div>
-                  <h3 className="text-lg font-bold text-stone-900 mb-4 pb-2 border-b-2 border-stone-200">
-                    Tax Calculation
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center pl-4">
-                      <span className="text-stone-700">Corporate Tax Rate</span>
-                      <span className="font-medium text-stone-900">30%</span>
-                    </div>
-                    <div className="flex justify-between items-center pl-4">
-                      <span className="text-stone-700">Estimated Tax Liability</span>
-                      <span className="font-medium text-stone-900">{formatCurrency(netProfit * 0.3)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="bg-amber-50 p-6 rounded-lg border-2 border-amber-200">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-lg">
-                      <span className="font-bold text-amber-900">Total Tax Due</span>
-                      <span className="font-bold text-amber-900 text-xl">{formatCurrency(netProfit * 0.3)}</span>
-                    </div>
-                    <p className="text-sm text-amber-800">
-                      Note: This is an estimated calculation. Please consult with a tax professional for accurate tax
-                      filing.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="financial">
+            <FinancialSummaryReport selectedYear={selectedYear} />
           </TabsContent>
         </Tabs>
       </div>

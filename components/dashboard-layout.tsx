@@ -7,7 +7,6 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -29,6 +28,7 @@ import {
   Menu,
   LogOut,
   Shield,
+  MapPin,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -38,13 +38,11 @@ interface DashboardLayoutProps {
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Income", href: "/income", icon: TrendingUp },
+  { name: "Sales", href: "/income", icon: TrendingUp },
   { name: "Expenses", href: "/expenses", icon: TrendingDown },
-  { name: "Transactions", href: "/transactions", icon: Receipt },
-  { name: "Inventory", href: "/inventory", icon: Package },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Production", href: "/inventory", icon: Package },
   { name: "Reports", href: "/reports", icon: FileText },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
 ]
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -57,12 +55,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     router.prefetch('/dashboard')
     router.prefetch('/income')
-    router.prefetch('/expenses')
-    router.prefetch('/transactions')
     router.prefetch('/inventory')
-    router.prefetch('/analytics')
     router.prefetch('/reports')
-    router.prefetch('/settings')
+    router.prefetch('/mine-info')
   }, [router])
 
   const handleLogout = () => {
@@ -79,163 +74,123 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50/30 to-emerald-50/20">
-      {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-stone-200">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8">
-              <Image
-                src="/logo.png"
-                alt="Mining Finance Logo"
-                width={32}
-                height={32}
-                className="w-full h-full object-contain"
-              />
+    <div className="flex h-screen bg-gradient-to-br from-stone-50 via-amber-50/30 to-emerald-50/20 overflow-hidden">
+      {/* Mobile sidebar backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 transform bg-white border-r border-stone-200 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex h-full flex-col">
+          {/* Logo */}
+          <div className="flex h-16 items-center justify-between border-b border-stone-200 px-6">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10">
+                <Image
+                  src="/logo.png"
+                  alt="Mine Manager Logo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <h1 className="text-xl font-bold text-stone-900">
+                Mine Manager
+              </h1>
             </div>
-            <span className="font-bold text-stone-900">Mining Finance</span>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="lg:hidden text-stone-700"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
-              <div className="flex flex-col h-full">
-                <div className="p-4 border-b border-stone-200">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10">
-                      <Image
-                        src="/logo.png"
-                        alt="Mining Finance Logo"
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-bold text-stone-900">Mining Finance</p>
-                      <p className="text-xs text-stone-600">{user?.name}</p>
-                    </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  title={item.name}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md"
+                      : "text-stone-700 hover:bg-stone-100"
+                  )}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <span>{item.name}</span>
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* Footer */}
+          <div className="border-t border-stone-200 p-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start px-2 h-auto py-2 text-stone-700 hover:bg-stone-100">
+                  <Avatar className="h-9 w-9 mr-3">
+                    <AvatarFallback className="bg-gradient-to-br from-amber-600 to-amber-700 text-white text-sm">
+                      {user ? getInitials(user.name) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-stone-900">{user?.name}</p>
+                    <p className="text-xs text-stone-600 flex items-center gap-1">
+                      {user?.role === "admin" && <Shield className="h-3 w-3" />}
+                      {user?.role === "admin" ? "Administrator" : "Standard User"}
+                    </p>
                   </div>
-                </div>
-                <nav className="flex-1 p-4 space-y-1">
-                  {navigation.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                          isActive
-                            ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white"
-                            : "text-stone-700 hover:bg-stone-100",
-                        )}
-                      >
-                        <item.icon className="h-5 w-5" />
-                        {item.name}
-                      </Link>
-                    )
-                  })}
-                </nav>
-                <div className="p-4 border-t border-stone-200">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-5 w-5 mr-3" />
-                    Logout
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
-
-      <div className="lg:flex">
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-stone-200">
-          <div className="flex flex-col flex-1">
-            <div className="p-6 border-b border-stone-200">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12">
-                  <Image
-                    src="/logo.png"
-                    alt="Mining Finance Logo"
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div>
-                  <p className="font-bold text-lg text-stone-900">Mining Finance</p>
-                  <p className="text-xs text-stone-600">Operations Manager</p>
-                </div>
-              </div>
-            </div>
-
-            <nav className="flex-1 p-4 space-y-1">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all",
-                      isActive
-                        ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md"
-                        : "text-stone-700 hover:bg-stone-100",
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.name}
-                  </Link>
-                )
-              })}
-            </nav>
-
-            <div className="p-4 border-t border-stone-200">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start px-2 h-auto py-2">
-                    <Avatar className="h-9 w-9 mr-3">
-                      <AvatarFallback className="bg-gradient-to-br from-amber-600 to-amber-700 text-white text-sm">
-                        {user ? getInitials(user.name) : "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium text-stone-900">{user?.name}</p>
-                      <p className="text-xs text-stone-600 flex items-center gap-1">
-                        {user?.role === "admin" && <Shield className="h-3 w-3" />}
-                        {user?.role === "admin" ? "Administrator" : "Standard User"}
-                      </p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-stone-600">{user?.email}</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-stone-600">{user?.email}</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        </aside>
+        </div>
+      </aside>
 
-        {/* Main Content */}
-        <main className="lg:pl-64 flex-1">
-          <div className="p-4 lg:p-8">{children}</div>
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Top bar */}
+        <header className="flex h-16 items-center border-b border-stone-200 bg-white px-6">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="mr-4 lg:hidden"
+          >
+            <Menu className="h-6 w-6 text-stone-700" />
+          </button>
+          <h2 className="text-lg font-semibold text-stone-900">
+            {navigation.find((item) => item.href === pathname)?.name || "Dashboard"}
+          </h2>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-auto p-6">
+          {children}
         </main>
       </div>
     </div>

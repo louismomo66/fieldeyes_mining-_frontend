@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto w-16 h-16">
             <Image
               src="/logo.png"
-              alt="Mining Finance Logo"
+              alt="Mine Manager Logo"
               width={64}
               height={64}
               className="w-full h-full object-contain"

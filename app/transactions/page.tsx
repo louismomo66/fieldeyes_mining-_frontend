@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { dataService } from "@/lib/data-service"
 import { TrendingUp, TrendingDown, Search, Filter, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Transaction } from "@/lib/types"
+import type { Transaction, Income, Expense } from "@/lib/types"
 
 export default function TransactionsPage() {
   const { user, isLoading } = useAuth()
@@ -21,7 +21,7 @@ export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid" | "partial">("all")
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all")
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -31,45 +31,38 @@ export default function TransactionsPage() {
   }, [user, isLoading, router])
 
   useEffect(() => {
-    const fetchTransactions = async () => {
+    const loadTransactions = async () => {
       if (!user) return
-      
       try {
         setLoading(true)
         const [incomes, expenses] = await Promise.all([
           dataService.getIncomes(),
           dataService.getExpenses()
         ])
-
-        // Combine all transactions
-        const allTransactions: Transaction[] = [
+        
+        const transactions: Transaction[] = [
           ...incomes.map((income) => ({
             ...income,
-            id: `income-${income.id}`, // Prefix with type to ensure uniqueness
             type: "income" as const,
-            description: `${income.mineralType} - ${income.customerName}`,
           })),
           ...expenses.map((expense) => ({
             ...expense,
-            id: `expense-${expense.id}`, // Prefix with type to ensure uniqueness
             type: "expense" as const,
-            description: `${expense.category} - ${expense.description}`,
-            totalAmount: expense.amount,
           })),
-        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-        setTransactions(allTransactions)
+        ].sort((a, b) => b.date.getTime() - a.date.getTime())
+        
+        setAllTransactions(transactions)
       } catch (error) {
-        console.error("Failed to fetch transactions:", error)
+        console.error("Failed to load transactions:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchTransactions()
+    loadTransactions()
   }, [user])
 
-  if (isLoading || !user) {
+  if (isLoading || !user || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
@@ -77,18 +70,8 @@ export default function TransactionsPage() {
     )
   }
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
-        </div>
-      </DashboardLayout>
-    )
-  }
-
   // Apply filters
-  const filteredTransactions = transactions.filter((transaction) => {
+  const filteredTransactions = allTransactions.filter((transaction) => {
     // Type filter
     if (typeFilter !== "all" && transaction.type !== typeFilter) return false
 
@@ -110,7 +93,10 @@ export default function TransactionsPage() {
     // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
-      return transaction.description.toLowerCase().includes(searchLower)
+      const description = transaction.type === "income" 
+        ? `${(transaction as Income).mineralType} - ${(transaction as Income).customerName}`.toLowerCase()
+        : `${(transaction as Expense).category} - ${(transaction as Expense).description}`.toLowerCase()
+      return description.includes(searchLower)
     }
 
     return true
@@ -145,26 +131,34 @@ export default function TransactionsPage() {
     }
   }
 
-  const totalIncome = filteredTransactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.totalAmount, 0)
+  const totalIncome = filteredTransactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + (t as Income).totalAmount, 0)
 
   const totalExpenses = filteredTransactions
     .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.totalAmount, 0)
+    .reduce((sum, t) => sum + (t as Expense).amount, 0)
 
   const netAmount = totalIncome - totalExpenses
 
   const handleExport = () => {
     // Simple CSV export
     const headers = ["Date", "Type", "Description", "Amount", "Status", "Amount Paid", "Amount Due"]
-    const rows = filteredTransactions.map((t) => [
-      formatDate(t.date),
-      t.type,
-      t.description,
-      t.totalAmount,
-      t.paymentStatus,
-      t.amountPaid,
-      t.amountDue,
-    ])
+    const rows = filteredTransactions.map((t) => {
+      const description = t.type === "income" 
+        ? `${(t as Income).mineralType} - ${(t as Income).customerName}`
+        : `${(t as Expense).category} - ${(t as Expense).description}`
+      const amount = t.type === "income" ? (t as Income).totalAmount : (t as Expense).amount
+      return [
+        formatDate(t.date),
+        t.type,
+        description,
+        amount,
+        t.paymentStatus,
+        t.amountPaid,
+        t.amountDue,
+      ]
+    })
 
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n")
     const blob = new Blob([csv], { type: "text/csv" })
@@ -309,9 +303,9 @@ export default function TransactionsPage() {
               {filteredTransactions.length === 0 ? (
                 <p className="text-center text-stone-500 py-8">No transactions found</p>
               ) : (
-                filteredTransactions.map((transaction, index) => (
+                filteredTransactions.map((transaction) => (
                   <div
-                    key={transaction.id || `transaction-${transaction.type}-${index}`}
+                    key={transaction.id}
                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-stone-50 border border-stone-200 gap-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center gap-4 flex-1">
@@ -329,7 +323,11 @@ export default function TransactionsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="font-semibold text-stone-900 truncate">{transaction.description}</h3>
+                          <h3 className="font-semibold text-stone-900 truncate">
+                            {transaction.type === "income" 
+                              ? `${(transaction as Income).mineralType} - ${(transaction as Income).customerName}`
+                              : `${(transaction as Expense).category} - ${(transaction as Expense).description}`}
+                          </h3>
                           <Badge
                             variant="outline"
                             className={cn(
@@ -358,7 +356,11 @@ export default function TransactionsPage() {
                         )}
                       >
                         {transaction.type === "income" ? "+" : "-"}
-                        {formatCurrency(transaction.totalAmount)}
+                        {formatCurrency(
+                          transaction.type === "income" 
+                            ? (transaction as Income & { type: "income" }).totalAmount 
+                            : (transaction as Expense & { type: "expense" }).amount
+                        )}
                       </p>
                       <div className="text-xs text-stone-600 space-y-0.5">
                         <p>Paid: {formatCurrency(transaction.amountPaid)}</p>

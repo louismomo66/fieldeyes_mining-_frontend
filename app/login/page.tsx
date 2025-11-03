@@ -45,13 +45,13 @@ export default function LoginPage() {
           <div className="mx-auto w-16 h-16">
             <Image
               src="/logo.png"
-              alt="Mining Finance Logo"
+              alt="Mine Manager Logo"
               width={64}
               height={64}
               className="w-full h-full object-contain"
             />
           </div>
-          <CardTitle className="text-3xl font-bold text-stone-900">Mining Finance</CardTitle>
+          <CardTitle className="text-3xl font-bold text-stone-900">Mine Manager</CardTitle>
           <CardDescription className="text-stone-600">Sign in to manage your mining operations</CardDescription>
         </CardHeader>
         <CardContent>

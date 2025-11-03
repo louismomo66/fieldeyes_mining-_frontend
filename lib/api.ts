@@ -49,10 +49,12 @@ interface IncomeRequest {
   quantity: number
   unit: string
   price_per_unit: number
+  total_amount?: number
   customer_name: string
   customer_contact: string
   payment_status: string
   amount_paid: number
+  amount_due?: number
   notes?: string
 }
 
@@ -71,10 +73,29 @@ interface ExpenseRequest {
 interface InventoryRequest {
   name: string
   type: string
+  from?: string
+  pit_number?: string
+  miner_name?: string
+  batch_number?: string
+  processing_method?: string
   quantity: number
   unit: string
   min_stock_level: number
   current_value: number
+  last_updated?: string
+}
+
+interface MineSiteInfoRequest {
+  owner: string
+  license?: string
+  location: string
+  size?: number
+  number_of_pits?: number
+  commodities?: string
+  equipment?: string
+  employees?: number
+  established_year?: number
+  contact?: string
 }
 
 class ApiService {
@@ -111,7 +132,48 @@ class ApiService {
 
     try {
       const response = await fetch(url, config)
-      const data = await response.json()
+      
+      // Get response text first to check content type
+      const responseText = await response.text()
+      const contentType = response.headers.get('content-type')
+      
+      // Check if response is HTML (404 page) instead of JSON
+      if (!contentType || !contentType.includes('application/json')) {
+        // If we got HTML, it's likely a 404 from Next.js
+        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<!doctype')) {
+          return {
+            success: false,
+            error: `Backend API not available. Ensure backend is running on port 9006. Got HTML response instead of JSON.`,
+          }
+        }
+        // Try to parse as JSON anyway
+        try {
+          const data = JSON.parse(responseText)
+          if (!response.ok) {
+            return {
+              success: false,
+              error: data.error || `HTTP ${response.status}: ${response.statusText}`,
+            }
+          }
+          return data
+        } catch {
+          return {
+            success: false,
+            error: `Invalid response format: ${responseText.substring(0, 100)}`,
+          }
+        }
+      }
+      
+      // Response is JSON, parse it
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        return {
+          success: false,
+          error: `Failed to parse JSON response: ${responseText.substring(0, 100)}`,
+        }
+      }
 
       if (!response.ok) {
         return {
@@ -292,7 +354,19 @@ class ApiService {
   async getExpenseCategoryBreakdown(): Promise<ApiResponse> {
     return this.makeRequest('/analytics/expense-breakdown')
   }
+
+  // Mine site info methods
+  async getMineSiteInfo(): Promise<ApiResponse> {
+    return this.makeRequest('/minesite')
+  }
+
+  async createOrUpdateMineSiteInfo(data: MineSiteInfoRequest): Promise<ApiResponse> {
+    return this.makeRequest('/minesite', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
 }
 
 export const apiService = new ApiService()
-export type { ApiResponse, LoginRequest, SignupRequest, IncomeRequest, ExpenseRequest, InventoryRequest }
+export type { ApiResponse, LoginRequest, SignupRequest, IncomeRequest, ExpenseRequest, InventoryRequest, MineSiteInfoRequest }

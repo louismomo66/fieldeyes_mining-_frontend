@@ -62,6 +62,35 @@ export default function AnalyticsPage() {
     }
 
     loadAnalyticsData()
+    
+    // Refresh data when page becomes visible or when sales are updated
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        loadAnalyticsData()
+      }
+    }
+    
+    const handleSalesUpdate = () => {
+      if (user) {
+        loadAnalyticsData()
+      }
+    }
+
+    const handleExpensesUpdate = () => {
+      if (user) {
+        loadAnalyticsData()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('salesUpdated', handleSalesUpdate)
+    window.addEventListener('expensesUpdated', handleExpensesUpdate)
+ 
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('salesUpdated', handleSalesUpdate)
+      window.removeEventListener('expensesUpdated', handleExpensesUpdate)
+    }
   }, [user])
 
   if (isLoading || !user || loading) {
