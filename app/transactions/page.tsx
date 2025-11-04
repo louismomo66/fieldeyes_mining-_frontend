@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { dataService } from "@/lib/data-service"
+import { exportToCSV, exportToPDF } from "@/lib/export-utils"
 import { TrendingUp, TrendingDown, Search, Filter, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Transaction, Income, Expense } from "@/lib/types"
@@ -21,6 +22,7 @@ export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "unpaid" | "partial">("all")
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all")
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -142,7 +144,6 @@ export default function TransactionsPage() {
   const netAmount = totalIncome - totalExpenses
 
   const handleExport = () => {
-    // Simple CSV export
     const headers = ["Date", "Type", "Description", "Amount", "Status", "Amount Paid", "Amount Due"]
     const rows = filteredTransactions.map((t) => {
       const description = t.type === "income" 
@@ -153,20 +154,18 @@ export default function TransactionsPage() {
         formatDate(t.date),
         t.type,
         description,
-        amount,
+        amount.toString(),
         t.paymentStatus,
-        t.amountPaid,
-        t.amountDue,
+        t.amountPaid.toString(),
+        t.amountDue.toString(),
       ]
     })
 
-    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n")
-    const blob = new Blob([csv], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `transactions-${new Date().toISOString().split("T")[0]}.csv`
-    a.click()
+    if (exportFormat === "csv") {
+      exportToCSV([headers, ...rows], `transactions-${new Date().toISOString().split("T")[0]}.csv`)
+    } else {
+      exportToPDF(headers, rows, "All Transactions", `transactions-${new Date().toISOString().split("T")[0]}.pdf`)
+    }
   }
 
   return (
@@ -177,14 +176,25 @@ export default function TransactionsPage() {
             <h1 className="text-3xl font-bold text-stone-900 mb-2">All Transactions</h1>
             <p className="text-stone-600">View and filter all income and expense transactions</p>
           </div>
-          <Button
-            onClick={handleExport}
-            variant="outline"
-            className="border-stone-300 hover:bg-stone-100 bg-transparent"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2">
+            <Select value={exportFormat} onValueChange={(value: "csv" | "pdf") => setExportFormat(value)}>
+              <SelectTrigger className="w-[120px] border-stone-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="csv">CSV</SelectItem>
+                <SelectItem value="pdf">PDF</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleExport}
+              variant="outline"
+              className="border-stone-300 hover:bg-stone-100 bg-transparent"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}

@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
+import { exportToCSV, exportToPDF } from "@/lib/export-utils"
 import type { FinancialSummary, MonthlyData } from "@/lib/types"
 
 interface FinancialSummaryReportProps {
@@ -15,6 +17,7 @@ interface FinancialSummaryReportProps {
 export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [summary, setSummary] = useState<FinancialSummary | null>(null)
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
 
@@ -59,7 +62,7 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
   const handleExport = () => {
     if (!summary) return
 
-    const csvContent = [
+    const summaryRows = [
       ["Financial Summary", "", ""],
       ["Total Income", formatCurrency(summary.totalIncome), ""],
       ["Total Expenses", formatCurrency(summary.totalExpenses), ""],
@@ -71,22 +74,34 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
       ["Monthly Data", "", ""],
       ["Month", "Income", "Expenses", "Profit"],
       ...monthlyData.map(m => [m.month, formatCurrency(m.income), formatCurrency(m.expenses), formatCurrency(m.profit)])
-    ].map(row => row.join(",")).join("\n")
+    ]
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", `financial-summary-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    toast({
-      title: "Export successful",
-      description: "Financial summary exported as CSV",
-    })
+    if (exportFormat === "csv") {
+      exportToCSV(summaryRows, `financial-summary-${selectedYear}.csv`)
+      toast({
+        title: "Export successful",
+        description: "Financial summary exported as CSV",
+      })
+    } else {
+      // For PDF, use a simplified format with headers
+      const headers = ["Item", "Value", ""]
+      const rows = [
+        ["Total Income", formatCurrency(summary.totalIncome), ""],
+        ["Total Expenses", formatCurrency(summary.totalExpenses), ""],
+        ["Net Profit", formatCurrency(summary.netProfit), ""],
+        ["Profit Margin", `${summary.profitMargin.toFixed(2)}%`, ""],
+        ["Total Receivables", formatCurrency(summary.totalReceivables), ""],
+        ["Total Payables", formatCurrency(summary.totalPayables), ""],
+        ["", "", ""],
+        ["Month", "Income", "Expenses", "Profit"],
+        ...monthlyData.map(m => [m.month, formatCurrency(m.income), formatCurrency(m.expenses), formatCurrency(m.profit)])
+      ]
+      exportToPDF(headers, rows, `Financial Summary - ${selectedYear}`, `financial-summary-${selectedYear}.pdf`)
+      toast({
+        title: "Export successful",
+        description: "Financial summary opened for PDF printing",
+      })
+    }
   }
 
   if (loading) {
@@ -118,13 +133,24 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
                 Generated on {new Date().toLocaleDateString()}
               </p>
             </div>
-            <Button 
-              onClick={handleExport}
-              className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
-            >
-              <Download className="h-4 w-4" />
-              Export Financial Summary
-            </Button>
+            <div className="flex gap-2">
+              <Select value={exportFormat} onValueChange={(value: "csv" | "pdf") => setExportFormat(value)}>
+                <SelectTrigger className="w-[120px] border-stone-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleExport}
+                className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

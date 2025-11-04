@@ -4,9 +4,11 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
+import { exportToCSV, exportToPDF } from "@/lib/export-utils"
 import type { Expense, CategoryBreakdown } from "@/lib/types"
 
 interface ExpenseReportProps {
@@ -16,6 +18,7 @@ interface ExpenseReportProps {
 export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [breakdown, setBreakdown] = useState<CategoryBreakdown[]>([])
   const [summary, setSummary] = useState({
@@ -82,34 +85,31 @@ export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
   }
 
   const handleExport = () => {
-    const csvContent = [
-      ["Date", "Category", "Description", "Amount", "Supplier", "Payment Status", "Amount Paid", "Amount Due"],
-      ...expenses.map(e => [
-        formatDate(e.date),
-        e.category,
-        e.description,
-        e.amount.toFixed(2),
-        e.supplierName,
-        e.paymentStatus,
-        e.amountPaid.toFixed(2),
-        e.amountDue.toFixed(2),
-      ])
-    ].map(row => row.join(",")).join("\n")
+    const headers = ["Date", "Category", "Description", "Amount", "Supplier", "Payment Status", "Amount Paid", "Amount Due"]
+    const rows = expenses.map(e => [
+      formatDate(e.date),
+      e.category,
+      e.description,
+      e.amount.toFixed(2),
+      e.supplierName,
+      e.paymentStatus,
+      e.amountPaid.toFixed(2),
+      e.amountDue.toFixed(2),
+    ])
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", `expense-report-${selectedYear}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    toast({
-      title: "Export successful",
-      description: "Expense report exported as CSV",
-    })
+    if (exportFormat === "csv") {
+      exportToCSV([headers, ...rows], `expense-report-${selectedYear}.csv`)
+      toast({
+        title: "Export successful",
+        description: "Expense report exported as CSV",
+      })
+    } else {
+      exportToPDF(headers, rows, `Expense Report - ${selectedYear}`, `expense-report-${selectedYear}.pdf`)
+      toast({
+        title: "Export successful",
+        description: "Expense report opened for PDF printing",
+      })
+    }
   }
 
   if (loading) {
@@ -131,13 +131,24 @@ export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
                 Generated on {new Date().toLocaleDateString()}
               </p>
             </div>
-            <Button 
-              onClick={handleExport}
-              className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
-            >
-              <Download className="h-4 w-4" />
-              Export Expense Report
-            </Button>
+            <div className="flex gap-2">
+              <Select value={exportFormat} onValueChange={(value: "csv" | "pdf") => setExportFormat(value)}>
+                <SelectTrigger className="w-[120px] border-stone-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleExport}
+                className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

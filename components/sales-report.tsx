@@ -4,9 +4,11 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
+import { exportToCSV, exportToPDF } from "@/lib/export-utils"
 import type { Income } from "@/lib/types"
 
 interface SalesReportProps {
@@ -16,6 +18,7 @@ interface SalesReportProps {
 export function SalesReport({ selectedYear }: SalesReportProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [sales, setSales] = useState<Income[]>([])
   const [summary, setSummary] = useState({
     totalSales: 0,
@@ -79,37 +82,34 @@ export function SalesReport({ selectedYear }: SalesReportProps) {
   }
 
   const handleExport = () => {
-    const csvContent = [
-      ["Date", "Item Name", "Mineral Type", "Quantity", "Unit", "Price per Unit", "Total Amount", "Customer", "Payment Status", "Amount Paid", "Amount Due"],
-      ...sales.map(s => [
-        formatDate(s.date),
-        s.itemName || "",
-        s.mineralType,
-        s.quantity.toString(),
-        s.unit,
-        s.pricePerUnit.toFixed(2),
-        s.totalAmount.toFixed(2),
-        s.customerName,
-        s.paymentStatus,
-        s.amountPaid.toFixed(2),
-        s.amountDue.toFixed(2),
-      ])
-    ].map(row => row.join(",")).join("\n")
+    const headers = ["Date", "Item Name", "Mineral Type", "Quantity", "Unit", "Price per Unit", "Total Amount", "Customer", "Payment Status", "Amount Paid", "Amount Due"]
+    const rows = sales.map(s => [
+      formatDate(s.date),
+      s.itemName || "",
+      s.mineralType,
+      s.quantity.toString(),
+      s.unit,
+      s.pricePerUnit.toFixed(2),
+      s.totalAmount.toFixed(2),
+      s.customerName,
+      s.paymentStatus,
+      s.amountPaid.toFixed(2),
+      s.amountDue.toFixed(2),
+    ])
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", `sales-report-${selectedYear}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    toast({
-      title: "Export successful",
-      description: "Sales report exported as CSV",
-    })
+    if (exportFormat === "csv") {
+      exportToCSV([headers, ...rows], `sales-report-${selectedYear}.csv`)
+      toast({
+        title: "Export successful",
+        description: "Sales report exported as CSV",
+      })
+    } else {
+      exportToPDF(headers, rows, `Sales Report - ${selectedYear}`, `sales-report-${selectedYear}.pdf`)
+      toast({
+        title: "Export successful",
+        description: "Sales report opened for PDF printing",
+      })
+    }
   }
 
   if (loading) {
@@ -139,13 +139,24 @@ export function SalesReport({ selectedYear }: SalesReportProps) {
                 Generated on {new Date().toLocaleDateString()}
               </p>
             </div>
-            <Button 
-              onClick={handleExport}
-              className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
-            >
-              <Download className="h-4 w-4" />
-              Export Sales Report
-            </Button>
+            <div className="flex gap-2">
+              <Select value={exportFormat} onValueChange={(value: "csv" | "pdf") => setExportFormat(value)}>
+                <SelectTrigger className="w-[120px] border-stone-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleExport}
+                className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

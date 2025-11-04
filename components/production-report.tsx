@@ -4,9 +4,11 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
+import { exportToCSV, exportToPDF } from "@/lib/export-utils"
 import type { InventoryItem } from "@/lib/types"
 
 interface ProductionReportProps {
@@ -16,6 +18,7 @@ interface ProductionReportProps {
 export function ProductionReport({ selectedYear }: ProductionReportProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [production, setProduction] = useState<InventoryItem[]>([])
   const [summary, setSummary] = useState({
     totalQuantity: 0,
@@ -81,37 +84,34 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
   }
 
   const handleExport = () => {
-    const csvContent = [
-      ["Item Name", "Type", "Source", "Pit Number", "Miner Name", "Batch Number", "Processing Method", "Quantity", "Unit", "Current Value", "Last Updated"],
-      ...production.map(item => [
-        item.name,
-        item.type,
-        item.from || "",
-        item.pitNumber || "",
-        item.minerName || "",
-        item.batchNumber || "",
-        item.processingMethod || "",
-        item.quantity.toString(),
-        item.unit,
-        item.currentValue.toFixed(2),
-        formatDate(item.lastUpdated),
-      ])
-    ].map(row => row.join(",")).join("\n")
+    const headers = ["Item Name", "Type", "Source", "Pit Number", "Miner Name", "Batch Number", "Processing Method", "Quantity", "Unit", "Current Value", "Last Updated"]
+    const rows = production.map(item => [
+      item.name,
+      item.type,
+      item.from || "",
+      item.pitNumber || "",
+      item.minerName || "",
+      item.batchNumber || "",
+      item.processingMethod || "",
+      item.quantity.toString(),
+      item.unit,
+      item.currentValue.toFixed(2),
+      formatDate(item.lastUpdated),
+    ])
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", `production-report-${selectedYear}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    toast({
-      title: "Export successful",
-      description: "Production report exported as CSV",
-    })
+    if (exportFormat === "csv") {
+      exportToCSV([headers, ...rows], `production-report-${selectedYear}.csv`)
+      toast({
+        title: "Export successful",
+        description: "Production report exported as CSV",
+      })
+    } else {
+      exportToPDF(headers, rows, `Production Report - ${selectedYear}`, `production-report-${selectedYear}.pdf`)
+      toast({
+        title: "Export successful",
+        description: "Production report opened for PDF printing",
+      })
+    }
   }
 
   if (loading) {
@@ -133,13 +133,24 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
                 Generated on {new Date().toLocaleDateString()}
               </p>
             </div>
-            <Button 
-              onClick={handleExport}
-              className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
-            >
-              <Download className="h-4 w-4" />
-              Export Production Report
-            </Button>
+            <div className="flex gap-2">
+              <Select value={exportFormat} onValueChange={(value: "csv" | "pdf") => setExportFormat(value)}>
+                <SelectTrigger className="w-[120px] border-stone-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleExport}
+                className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

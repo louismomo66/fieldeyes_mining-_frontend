@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
+import { exportToCSV, exportToPDF } from "@/lib/export-utils"
 
 interface TrialBalanceProps {
   selectedYear: number
@@ -14,6 +16,7 @@ interface TrialBalanceProps {
 export function TrialBalance({ selectedYear }: TrialBalanceProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [accounts, setAccounts] = useState<Array<{ name: string; debit: number; credit: number }>>([])
 
   useEffect(() => {
@@ -147,26 +150,25 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
   }
 
   const handleExport = () => {
-    const csvContent = [
-      ["Account Name", "Debit (UGX)", "Credit (UGX)"],
+    const headers = ["Account Name", "Debit (UGX)", "Credit (UGX)"]
+    const rows = [
       ...accounts.map(acc => [acc.name, acc.debit.toFixed(2), acc.credit.toFixed(2)]),
       ["Total", totalDebit.toFixed(2), totalCredit.toFixed(2)]
-    ].map(row => row.join(",")).join("\n")
+    ]
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", `trial-balance-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    toast({
-      title: "Export successful",
-      description: "Trial balance exported as CSV",
-    })
+    if (exportFormat === "csv") {
+      exportToCSV([headers, ...rows], `trial-balance-${selectedYear}.csv`)
+      toast({
+        title: "Export successful",
+        description: "Trial balance exported as CSV",
+      })
+    } else {
+      exportToPDF(headers, rows, `Trial Balance - ${selectedYear}`, `trial-balance-${selectedYear}.pdf`)
+      toast({
+        title: "Export successful",
+        description: "Trial balance opened for PDF printing",
+      })
+    }
   }
 
   if (loading) {
@@ -184,13 +186,24 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
           <h2 className="text-3xl font-bold text-stone-900">Trial Balance</h2>
           <p className="text-stone-600">Financial overview as of {new Date().toLocaleDateString()}</p>
         </div>
-        <Button 
-          onClick={handleExport}
-          className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
-        >
-          <Download className="h-4 w-4" />
-          Export Report
-        </Button>
+            <div className="flex gap-2">
+              <Select value={exportFormat} onValueChange={(value: "csv" | "pdf") => setExportFormat(value)}>
+                <SelectTrigger className="w-[120px] border-stone-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleExport}
+                className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
       </div>
 
       <Card className="border-stone-200">
