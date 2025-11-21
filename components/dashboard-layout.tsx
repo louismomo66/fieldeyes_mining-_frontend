@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -31,8 +31,6 @@ import {
   MapPin,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { toast } from "sonner"
-import { dataService } from "@/lib/data-service"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -52,25 +50,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter()
   const { user, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [isMineInfoComplete, setIsMineInfoComplete] = useState<boolean | null>(null)
-  const lastRedirectSourceRef = useRef<string | null>(null)
-  const mineInfoWarning =
-    "Please complete your mine site information before accessing the rest of the application."
-  const checkMineInfoCompletion = useCallback(async () => {
-    if (!user) {
-      setIsMineInfoComplete(null)
-      return
-    }
-
-    try {
-      const info = await dataService.getMineSiteInfo()
-      const isComplete = Boolean(info && info.owner && info.location)
-      setIsMineInfoComplete(isComplete)
-    } catch (error) {
-      console.error("Failed to verify mine site information completion status:", error)
-      setIsMineInfoComplete(false)
-    }
-  }, [user])
 
   // Prefetch common routes to speed up navigation
   useEffect(() => {
@@ -80,44 +59,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     router.prefetch('/reports')
     router.prefetch('/mine-info')
   }, [router])
-
-  useEffect(() => {
-    if (user) {
-      checkMineInfoCompletion()
-    } else {
-      setIsMineInfoComplete(null)
-    }
-  }, [user, pathname, checkMineInfoCompletion])
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return
-    }
-
-    const handleMineInfoUpdated = () => {
-      if (user) {
-        checkMineInfoCompletion()
-      }
-    }
-
-    window.addEventListener("mineInfoUpdated", handleMineInfoUpdated)
-    return () => {
-      window.removeEventListener("mineInfoUpdated", handleMineInfoUpdated)
-    }
-  }, [checkMineInfoCompletion, user])
-
-  useEffect(() => {
-    if (!user || isMineInfoComplete !== false) {
-      lastRedirectSourceRef.current = null
-      return
-    }
-
-    if (pathname !== "/mine-info" && lastRedirectSourceRef.current !== pathname) {
-      lastRedirectSourceRef.current = pathname
-      toast.warning(mineInfoWarning)
-      router.replace("/mine-info")
-    }
-  }, [isMineInfoComplete, pathname, router, user, mineInfoWarning])
 
   const handleLogout = () => {
     logout()
@@ -130,24 +71,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       .map((n) => n[0])
       .join("")
       .toUpperCase()
-  }
-
-  const isNavigationRestricted = isMineInfoComplete === false
-
-  const handleNavClick = (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    href: string,
-    isRestricted: boolean,
-  ) => {
-    if (isRestricted) {
-      event.preventDefault()
-      toast.warning(mineInfoWarning)
-      router.push("/mine-info")
-      setMobileMenuOpen(false)
-      return
-    }
-
-    setMobileMenuOpen(false)
   }
 
   return (
@@ -196,31 +119,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = pathname === item.href
-              const isRestricted = isNavigationRestricted && item.href !== "/mine-info"
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  onClick={(event) => handleNavClick(event, item.href, isRestricted)}
-                  title={isRestricted ? `${item.name} (locked until mine site info is complete)` : item.name}
-                  aria-disabled={isRestricted}
-                  tabIndex={isRestricted ? -1 : 0}
+                  onClick={() => setMobileMenuOpen(false)}
+                  title={item.name}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
                       ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md"
-                      : "text-stone-700 hover:bg-stone-100",
-                    isRestricted && !isActive && "cursor-not-allowed opacity-60",
-                    isRestricted && isActive && "cursor-not-allowed"
+                      : "text-stone-700 hover:bg-stone-100"
                   )}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
-                  <span className="flex-1">{item.name}</span>
-                  {isNavigationRestricted && item.href === "/mine-info" && (
-                    <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                      Required
-                    </span>
-                  )}
+                  <span>{item.name}</span>
                 </Link>
               )
             })}
@@ -277,11 +190,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page content */}
         <main className="flex-1 overflow-auto p-6">
-          {isNavigationRestricted && pathname !== "/mine-info" && (
-            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
-              {mineInfoWarning}
-            </div>
-          )}
           {children}
         </main>
       </div>

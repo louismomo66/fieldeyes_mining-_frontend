@@ -43,7 +43,7 @@ export default function MineSiteInfoPage() {
   useEffect(() => {
     const loadMineSiteInfo = async () => {
       if (!user) return
-      
+
       try {
         setLoading(true)
         const info = await dataService.getMineSiteInfo()
@@ -80,11 +80,11 @@ export default function MineSiteInfoPage() {
   useEffect(() => {
     const loadPitsData = async () => {
       if (!user) return
+
       try {
         const inventory = await dataService.getInventory()
-        // Group by pit number and calculate monthly output
         const pitsMap = new Map<string, { mineral: string; output: number }>()
-        
+
         inventory
           .filter(item => item.from === "mine" && item.pitNumber)
           .forEach(item => {
@@ -154,7 +154,6 @@ export default function MineSiteInfoPage() {
       toast.error("Failed to update mine site information")
     }
   }
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
