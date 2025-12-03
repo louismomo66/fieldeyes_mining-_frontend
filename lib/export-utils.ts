@@ -1,7 +1,39 @@
 // Export utilities for CSV and PDF generation
 
+// Format number with commas (thousands separator)
+export function formatNumberWithCommas(value: number | string): string {
+  if (typeof value === "string") {
+    // Try to parse as number
+    const num = parseFloat(value)
+    if (isNaN(num)) return value
+    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+  return value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+// Format currency with commas (removes currency symbol for CSV)
+export function formatCurrencyForExport(amount: number): string {
+  return formatNumberWithCommas(amount)
+}
+
 export function exportToCSV(data: string[][], filename: string) {
-  const csvContent = data.map(row => row.join(",")).join("\n")
+  // Format numeric values in the data with commas
+  const formattedData = data.map(row => 
+    row.map(cell => {
+      // Check if cell is a number (including currency strings)
+      const numMatch = cell.match(/^[\d,]+\.?\d*$/)
+      if (numMatch) {
+        // Remove existing commas and format
+        const num = parseFloat(cell.replace(/,/g, ""))
+        if (!isNaN(num)) {
+          return formatNumberWithCommas(num)
+        }
+      }
+      return cell
+    })
+  )
+  
+  const csvContent = formattedData.map(row => row.join(",")).join("\n")
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
   const link = document.createElement("a")
   const url = URL.createObjectURL(blob)
@@ -14,7 +46,26 @@ export function exportToCSV(data: string[][], filename: string) {
   URL.revokeObjectURL(url)
 }
 
-export function exportToPDF(headers: string[], rows: string[][], title: string, filename: string) {
+export function exportToPDF(headers: string[], rows: string[][], title: string, filename: string, serialNumber?: string) {
+  // Get logo path (try logo.png first, fallback to placeholder)
+  const logoPath = "/logo.png"
+  
+  // Format numeric values in rows with commas
+  const formattedRows = rows.map(row => 
+    row.map(cell => {
+      // Check if cell is a number (including currency strings)
+      const numMatch = cell.match(/^[\d,]+\.?\d*$/)
+      if (numMatch) {
+        // Remove existing commas and format
+        const num = parseFloat(cell.replace(/,/g, ""))
+        if (!isNaN(num)) {
+          return formatNumberWithCommas(num)
+        }
+      }
+      return cell
+    })
+  )
+  
   // Create a printable HTML document
   const htmlContent = `
     <!DOCTYPE html>
@@ -29,10 +80,31 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
             font-family: Arial, sans-serif;
             padding: 20px;
           }
-          h1 {
-            text-align: center;
+          .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+          }
+          .logo {
+            max-height: 60px;
+            max-width: 150px;
+            object-fit: contain;
+          }
+          .header-info {
+            text-align: right;
+          }
+          .header-info h1 {
+            margin: 0;
+            font-size: 24px;
             color: #333;
+          }
+          .serial-number {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
           }
           table {
             width: 100%;
@@ -56,11 +128,19 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
             text-align: center;
             font-size: 12px;
             color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
           }
         </style>
       </head>
       <body>
-        <h1>${title}</h1>
+        <div class="header">
+          <img src="${logoPath}" alt="Logo" class="logo" onerror="this.style.display='none'" />
+          <div class="header-info">
+            <h1>${escapeHtml(title)}</h1>
+            ${serialNumber ? `<div class="serial-number">Serial Number: ${escapeHtml(serialNumber)}</div>` : ""}
+          </div>
+        </div>
         <table>
           <thead>
             <tr>
@@ -68,7 +148,7 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
             </tr>
           </thead>
           <tbody>
-            ${rows.map(row => 
+            ${formattedRows.map(row => 
               `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`
             ).join("")}
           </tbody>

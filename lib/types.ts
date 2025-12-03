@@ -68,6 +68,7 @@ export interface InventoryItem {
   from?: ProductionFrom
   pitNumber?: string
   minerName?: string
+  minerSerialNumber?: string
   batchNumber?: string
   processingMethod?: ProcessingMethod
   quantity: number

@@ -43,6 +43,7 @@ const navigation = [
   { name: "Production", href: "/inventory", icon: Package },
   { name: "Reports", href: "/reports", icon: FileText },
   { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
+  { name: "Admin Panel", href: "/admin", icon: Shield, adminOnly: true },
 ]
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -117,26 +118,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  title={item.name}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md"
-                      : "text-stone-700 hover:bg-stone-100"
-                  )}
-                >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
+            {navigation
+              .filter((item) => !item.adminOnly || user?.role === "admin")
+              .map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    title={item.name}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md"
+                        : "text-stone-700 hover:bg-stone-100"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <span>{item.name}</span>
+                  </Link>
+                )
+              })}
           </nav>
 
           {/* Footer */}

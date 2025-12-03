@@ -82,6 +82,9 @@ export function SalesReport({ selectedYear }: SalesReportProps) {
   }
 
   const handleExport = () => {
+    // Generate serial number for this report
+    const serialNumber = `SALES-${selectedYear}-${Date.now().toString().slice(-6)}`
+    
     const headers = ["Date", "Item Name", "Mineral Type", "Quantity", "Unit", "Price per Unit", "Total Amount", "Customer", "Payment Status", "Amount Paid", "Amount Due"]
     const rows = sales.map(s => [
       formatDate(s.date),
@@ -104,7 +107,7 @@ export function SalesReport({ selectedYear }: SalesReportProps) {
         description: "Sales report exported as CSV",
       })
     } else {
-      exportToPDF(headers, rows, `Sales Report - ${selectedYear}`, `sales-report-${selectedYear}.pdf`)
+      exportToPDF(headers, rows, `Sales Report - ${selectedYear}`, `sales-report-${selectedYear}.pdf`, serialNumber)
       toast({
         title: "Export successful",
         description: "Sales report opened for PDF printing",

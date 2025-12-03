@@ -136,7 +136,7 @@ export default function MineSiteInfoPage() {
         equipment: formData.equipment || undefined,
         employees: formData.employees ? parseInt(formData.employees) : undefined,
         established_year: formData.establishedYear ? parseInt(formData.establishedYear) : undefined,
-        contact: formData.contact || undefined,
+        contact: formData.contact, // Required field
       })
 
       if (updatedInfo) {
@@ -308,14 +308,18 @@ export default function MineSiteInfoPage() {
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="contact">Contact Information</Label>
+                    <Label htmlFor="contact">Contact Information *</Label>
                     <Input
                       id="contact"
+                      type="tel"
                       value={formData.contact}
                       onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
                       disabled={!isEditing}
                       className="border-stone-300"
+                      placeholder="Phone number or email address"
+                      required
                     />
+                    <p className="text-xs text-stone-500">Enter a valid phone number (e.g., +256700123456) or email address</p>
                   </div>
                 </div>
 

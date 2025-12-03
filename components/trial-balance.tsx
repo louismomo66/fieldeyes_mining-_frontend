@@ -39,7 +39,7 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
           
           const yearExpenses = expenses.filter(exp => {
             const expenseYear = new Date(exp.date).getFullYear()
-            return expenseYear === selectedYear
+            return expenseYear === selectedYear && exp.category !== "fuel"
           })
           
           const yearInventory = inventory.filter(inv => {
@@ -81,7 +81,6 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
           const expenseCategories: Array<{ label: string; filter: (exp: typeof yearExpenses[number]) => boolean }> = [
             { label: "Labor Costs", filter: exp => exp.category === "labor" },
             { label: "Equipment & Maintenance", filter: exp => exp.category === "equipment" || exp.category === "maintenance" },
-            { label: "Fuel & Energy", filter: exp => exp.category === "fuel" },
             { label: "Chemicals & Supplies", filter: exp => exp.category === "chemicals" || exp.category === "supply" },
             { label: "Transport Costs", filter: exp => exp.category === "transport" },
             { label: "Other Expenses", filter: exp => exp.category === "other" },
@@ -150,6 +149,9 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
   }
 
   const handleExport = () => {
+    // Generate serial number for this report
+    const serialNumber = `TB-${selectedYear}-${Date.now().toString().slice(-6)}`
+    
     const headers = ["Account Name", "Debit (UGX)", "Credit (UGX)"]
     const rows = [
       ...accounts.map(acc => [acc.name, acc.debit.toFixed(2), acc.credit.toFixed(2)]),
@@ -163,7 +165,7 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
         description: "Trial balance exported as CSV",
       })
     } else {
-      exportToPDF(headers, rows, `Trial Balance - ${selectedYear}`, `trial-balance-${selectedYear}.pdf`)
+      exportToPDF(headers, rows, `Trial Balance - ${selectedYear}`, `trial-balance-${selectedYear}.pdf`, serialNumber)
       toast({
         title: "Export successful",
         description: "Trial balance opened for PDF printing",

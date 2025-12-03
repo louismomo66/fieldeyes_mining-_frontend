@@ -45,13 +45,12 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
 
         // Calculate summary
         const totalQuantity = yearItems.reduce((sum, item) => sum + item.quantity, 0)
-        const totalValue = yearItems.reduce((sum, item) => sum + item.currentValue, 0)
         const minerals = yearItems.filter(item => item.type === "mineral").length
         const supplies = yearItems.filter(item => item.type === "supply").length
         const fromMine = yearItems.filter(item => item.from === "mine").length
         const fromProcessing = yearItems.filter(item => item.from === "processing").length
 
-        setSummary({ totalQuantity, totalValue, minerals, supplies, fromMine, fromProcessing })
+        setSummary({ totalQuantity, totalValue: 0, minerals, supplies, fromMine, fromProcessing })
       } catch (error) {
         console.error("Error loading production report:", error)
         toast({
@@ -84,18 +83,21 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
   }
 
   const handleExport = () => {
-    const headers = ["Item Name", "Type", "Source", "Pit Number", "Miner Name", "Batch Number", "Processing Method", "Quantity", "Unit", "Current Value", "Last Updated"]
+    // Generate serial number for this report
+    const serialNumber = `PROD-${selectedYear}-${Date.now().toString().slice(-6)}`
+    
+    const headers = ["Item Name", "Type", "Source", "Pit Number", "Miner Name", "Serial Number", "Batch Number", "Processing Method", "Quantity", "Unit", "Last Updated"]
     const rows = production.map(item => [
       item.name,
       item.type,
       item.from || "",
       item.pitNumber || "",
       item.minerName || "",
+      item.minerSerialNumber || "",
       item.batchNumber || "",
       item.processingMethod || "",
       item.quantity.toString(),
       item.unit,
-      item.currentValue.toFixed(2),
       formatDate(item.lastUpdated),
     ])
 
@@ -106,7 +108,7 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
         description: "Production report exported as CSV",
       })
     } else {
-      exportToPDF(headers, rows, `Production Report - ${selectedYear}`, `production-report-${selectedYear}.pdf`)
+      exportToPDF(headers, rows, `Production Report - ${selectedYear}`, `production-report-${selectedYear}.pdf`, serialNumber)
       toast({
         title: "Export successful",
         description: "Production report opened for PDF printing",
@@ -155,21 +157,13 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Card className="border-stone-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-medium text-stone-600">Total Quantity</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-lg font-bold text-stone-900">{summary.totalQuantity.toLocaleString()}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-stone-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium text-stone-600">Total Value</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg font-bold text-stone-900">{formatCurrency(summary.totalValue)}</p>
               </CardContent>
             </Card>
             <Card className="border-stone-200">
@@ -217,9 +211,9 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
                     <th className="p-3 text-left font-medium text-stone-900">Type</th>
                     <th className="p-3 text-left font-medium text-stone-900">Source</th>
                     <th className="p-3 text-left font-medium text-stone-900">Pit/Miner</th>
+                    <th className="p-3 text-left font-medium text-stone-900">Serial #</th>
                     <th className="p-3 text-left font-medium text-stone-900">Batch #</th>
                     <th className="p-3 text-right font-medium text-stone-900">Quantity</th>
-                    <th className="p-3 text-right font-medium text-stone-900">Value</th>
                     <th className="p-3 text-left font-medium text-stone-900">Updated</th>
                   </tr>
                 </thead>
@@ -254,12 +248,10 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
                           <td className="p-3 text-stone-700">
                             {item.pitNumber || item.minerName || "-"}
                           </td>
+                          <td className="p-3 text-stone-700 font-mono text-xs">{item.minerSerialNumber || "-"}</td>
                           <td className="p-3 text-stone-700">{item.batchNumber || "-"}</td>
                           <td className="p-3 text-right text-stone-700">
                             {item.quantity.toLocaleString()} {item.unit}
-                          </td>
-                          <td className="p-3 text-right font-medium text-stone-900">
-                            {formatCurrency(item.currentValue)}
                           </td>
                           <td className="p-3 text-stone-600 text-xs">{formatDate(item.lastUpdated)}</td>
                         </tr>

@@ -62,6 +62,9 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
   const handleExport = () => {
     if (!summary) return
 
+    // Generate serial number for this report
+    const serialNumber = `FIN-${selectedYear}-${Date.now().toString().slice(-6)}`
+
     const summaryRows = [
       ["Financial Summary", "", ""],
       ["Total Income", formatCurrency(summary.totalIncome), ""],
@@ -96,7 +99,7 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
         ["Month", "Income", "Expenses", "Profit"],
         ...monthlyData.map(m => [m.month, formatCurrency(m.income), formatCurrency(m.expenses), formatCurrency(m.profit)])
       ]
-      exportToPDF(headers, rows, `Financial Summary - ${selectedYear}`, `financial-summary-${selectedYear}.pdf`)
+      exportToPDF(headers, rows, `Financial Summary - ${selectedYear}`, `financial-summary-${selectedYear}.pdf`, serialNumber)
       toast({
         title: "Export successful",
         description: "Financial summary opened for PDF printing",

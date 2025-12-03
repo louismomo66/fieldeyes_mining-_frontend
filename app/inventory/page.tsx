@@ -56,7 +56,6 @@ export default function ProductionManagement() {
     method: "" as ProcessingMethod | "",
     quantity: "",
     unit: "kg",
-    cost: "",
     notes: "",
   })
 
@@ -114,7 +113,6 @@ export default function ProductionManagement() {
       method: item.processingMethod || ("" as ProcessingMethod | ""),
       quantity: item.quantity.toString(),
       unit: unitDisplay,
-      cost: item.currentValue.toString(),
       notes: "",
     })
     setSourceType(item.from || "")
@@ -139,7 +137,7 @@ export default function ProductionManagement() {
         quantity: parseFloat(formData.quantity),
         unit: unitValue,
         minStockLevel: 0, // Default for production records
-        currentValue: parseFloat(formData.cost) || 0,
+        currentValue: 0, // Production cost removed - set to 0
         lastUpdated: new Date(formData.date),
       }
 
@@ -251,10 +249,10 @@ export default function ProductionManagement() {
                 Production
               </h1>
               <p className="text-stone-600 mt-1">
-                📝 <strong>What to do here:</strong> Log daily production output and capture direct production costs
+                📝 <strong>What to do here:</strong> Log daily production output and track quantities
               </p>
               <p className="text-sm text-stone-600 mt-2">
-                💡 Click "Add Production" button to record a new production record with mineral details and costs
+                💡 Click "Add Production" button to record a new production record with mineral details and quantities
               </p>
             </div>
             <Button 
@@ -422,17 +420,6 @@ export default function ProductionManagement() {
           </Select>
         </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="cost">Production Cost (UGX)</Label>
-                    <Input 
-                      id="cost" 
-                      type="number" 
-                      step="0.01" 
-                      placeholder="Total cost" 
-                      value={formData.cost}
-                      onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                    />
-                  </div>
 
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="notes">Notes</Label>
@@ -464,7 +451,6 @@ export default function ProductionManagement() {
                         method: "" as ProcessingMethod | "",
                         quantity: "",
                         unit: "kg",
-                        cost: "",
                         notes: "",
                       })
                       setSourceType("")
@@ -505,14 +491,13 @@ export default function ProductionManagement() {
                       <th className="p-3 text-left font-medium text-stone-900">Source</th>
                       <th className="p-3 text-left font-medium text-stone-900">Pit/Miner</th>
                       <th className="p-3 text-left font-medium text-stone-900">Quantity</th>
-                      <th className="p-3 text-left font-medium text-stone-900">Production Cost</th>
                       <th className="p-3 text-left font-medium text-stone-900">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {production.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-stone-500">
+                        <td colSpan={6} className="p-8 text-center text-stone-500">
                           No production records found. Click "Add Production" to create one.
                         </td>
                       </tr>
@@ -542,7 +527,6 @@ export default function ProductionManagement() {
                             <td className="p-3 text-stone-700">
                               {item.quantity.toLocaleString()} {item.unit}
                             </td>
-                            <td className="p-3 text-stone-700">{formatCurrency(item.currentValue)}</td>
                             <td className="p-3">
                               <div className="flex gap-2">
                                 <Button

@@ -488,6 +488,20 @@ export class DataService {
       updated_at: new Date(data.updated_at || data.updatedAt),
     }
   }
+
+  // Admin methods
+  async getAllUsers(): Promise<Array<{ user: any; category: string }>> {
+    try {
+      const response = await apiService.getAllUsers()
+      if (response.success && response.data) {
+        return response.data
+      }
+      return []
+    } catch (error) {
+      console.error("Error fetching users:", error)
+      return []
+    }
+  }
 }
 
 export const dataService = new DataService()

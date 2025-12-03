@@ -28,12 +28,12 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
     from: item?.from || ("" as ProductionFrom | ""),
     pitNumber: item?.pitNumber || "",
     minerName: item?.minerName || "",
+    minerSerialNumber: item?.minerSerialNumber || "",
     batchNumber: item?.batchNumber || "",
     processingMethod: item?.processingMethod || ("" as ProcessingMethod | ""),
     quantity: item?.quantity?.toString() || "",
     unit: item?.unit || "kg",
     minStockLevel: item?.minStockLevel?.toString() || "",
-    currentValue: item?.currentValue?.toString() || "",
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,12 +46,13 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
       from: formData.type === "mineral" && formData.from ? formData.from : undefined,
       pitNumber: formData.from === "mine" ? formData.pitNumber : undefined,
       minerName: formData.from === "mine" ? formData.minerName : undefined,
+      minerSerialNumber: formData.minerSerialNumber || undefined,
       batchNumber: formData.batchNumber || undefined,
       processingMethod: formData.from === "processing" && formData.processingMethod ? formData.processingMethod : undefined,
       quantity: Number.parseFloat(formData.quantity),
       unit: formData.unit,
       minStockLevel: Number.parseFloat(formData.minStockLevel),
-      currentValue: Number.parseFloat(formData.currentValue),
+      currentValue: 0, // Set to 0 as production cost is removed
       lastUpdated: new Date(),
     }
 
@@ -111,7 +112,7 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
                 <Label htmlFor="from">From</Label>
                 <Select 
                   value={formData.from || ""} 
-                  onValueChange={(value: ProductionFrom) => setFormData({ ...formData, from: value, processingMethod: "", pitNumber: "", minerName: "" })}>
+                  onValueChange={(value: ProductionFrom) => setFormData({ ...formData, from: value, processingMethod: "", pitNumber: "", minerName: "", minerSerialNumber: "" })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
@@ -142,6 +143,16 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
                   value={formData.minerName}
                   onChange={(e) => setFormData({ ...formData, minerName: e.target.value })}
                   placeholder="Name of miner (for buying centers)"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="minerSerialNumber">Miner Serial Number *</Label>
+                <Input
+                  id="minerSerialNumber"
+                  value={formData.minerSerialNumber}
+                  onChange={(e) => setFormData({ ...formData, minerSerialNumber: e.target.value })}
+                  placeholder="e.g., MIN-001, MIN-002"
+                  required
                 />
               </div>
             </div>
@@ -230,18 +241,6 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
               step="0.01"
               value={formData.minStockLevel}
               onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="currentValue">Current Value (UGX)</Label>
-            <Input
-              id="currentValue"
-              type="number"
-              step="0.01"
-              value={formData.currentValue}
-              onChange={(e) => setFormData({ ...formData, currentValue: e.target.value })}
               required
             />
           </div>

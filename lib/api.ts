@@ -366,6 +366,11 @@ class ApiService {
       body: JSON.stringify(data),
     })
   }
+
+  // Admin methods
+  async getAllUsers(): Promise<ApiResponse> {
+    return this.makeRequest('/admin/users')
+  }
 }
 
 export const apiService = new ApiService()

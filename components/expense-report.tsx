@@ -37,10 +37,10 @@ export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
           dataService.getExpenseBreakdown(),
         ])
         
-        // Filter by year
+        // Filter by year and exclude fuel expenses
         const yearExpenses = expensesData.filter(expense => {
           const expenseYear = new Date(expense.date).getFullYear()
-          return expenseYear === selectedYear
+          return expenseYear === selectedYear && expense.category !== "fuel"
         })
 
         setExpenses(yearExpenses)
@@ -85,6 +85,9 @@ export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
   }
 
   const handleExport = () => {
+    // Generate serial number for this report
+    const serialNumber = `EXP-${selectedYear}-${Date.now().toString().slice(-6)}`
+    
     const headers = ["Date", "Category", "Description", "Amount", "Supplier", "Payment Status", "Amount Paid", "Amount Due"]
     const rows = expenses.map(e => [
       formatDate(e.date),
@@ -104,7 +107,7 @@ export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
         description: "Expense report exported as CSV",
       })
     } else {
-      exportToPDF(headers, rows, `Expense Report - ${selectedYear}`, `expense-report-${selectedYear}.pdf`)
+      exportToPDF(headers, rows, `Expense Report - ${selectedYear}`, `expense-report-${selectedYear}.pdf`, serialNumber)
       toast({
         title: "Export successful",
         description: "Expense report opened for PDF printing",
