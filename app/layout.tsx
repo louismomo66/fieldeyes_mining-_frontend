@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   title: "Mine Manager",
   description: "Comprehensive management for mining operations",
   generator: "v0.app",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 }
 
 export default function RootLayout({
