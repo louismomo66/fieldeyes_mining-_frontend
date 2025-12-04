@@ -29,6 +29,7 @@ import {
   LogOut,
   Shield,
   MapPin,
+  Eye,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -36,15 +37,29 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Sales", href: "/income", icon: TrendingUp },
-  { name: "Expenses", href: "/expenses", icon: TrendingDown },
-  { name: "Production", href: "/inventory", icon: Package },
-  { name: "Reports", href: "/reports", icon: FileText },
-  { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
-  { name: "Admin Panel", href: "/admin", icon: Shield, adminOnly: true },
-]
+const getNavigation = (isAdmin: boolean) => {
+  if (isAdmin) {
+    // Admin navigation - different from regular users
+    return [
+      { name: "Admin Dashboard", href: "/admin", icon: Eye },
+      { name: "User Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Sales", href: "/income", icon: TrendingUp },
+      { name: "Expenses", href: "/expenses", icon: TrendingDown },
+      { name: "Production", href: "/inventory", icon: Package },
+      { name: "Reports", href: "/reports", icon: FileText },
+      { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
+    ]
+  }
+  // Regular user navigation
+  return [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Sales", href: "/income", icon: TrendingUp },
+    { name: "Expenses", href: "/expenses", icon: TrendingDown },
+    { name: "Production", href: "/inventory", icon: Package },
+    { name: "Reports", href: "/reports", icon: FileText },
+    { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
+  ]
+}
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
@@ -118,8 +133,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-            {navigation
-              .filter((item) => !item.adminOnly || user?.role === "admin")
+            {getNavigation(user?.role === "admin")
               .map((item) => {
                 const isActive = pathname === item.href
                 return (
@@ -187,7 +201,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Menu className="h-6 w-6 text-stone-700" />
           </button>
           <h2 className="text-lg font-semibold text-stone-900">
-            {navigation.find((item) => item.href === pathname)?.name || "Dashboard"}
+            {getNavigation(user?.role === "admin").find((item) => item.href === pathname)?.name || "Dashboard"}
           </h2>
         </header>
 

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
-import { exportToCSV, exportToPDF } from "@/lib/export-utils"
+import { exportToCSV, exportToPDF, generateUserSerialNumber } from "@/lib/export-utils"
 
 interface TrialBalanceProps {
   selectedYear: number
@@ -148,10 +148,7 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
     }).format(amount)
   }
 
-  const handleExport = () => {
-    // Generate serial number for this report
-    const serialNumber = `TB-${selectedYear}-${Date.now().toString().slice(-6)}`
-    
+  const handleExport = async () => {
     const headers = ["Account Name", "Debit (UGX)", "Credit (UGX)"]
     const rows = [
       ...accounts.map(acc => [acc.name, acc.debit.toFixed(2), acc.credit.toFixed(2)]),
@@ -165,7 +162,13 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
         description: "Trial balance exported as CSV",
       })
     } else {
-      exportToPDF(headers, rows, `Trial Balance - ${selectedYear}`, `trial-balance-${selectedYear}.pdf`, serialNumber)
+      try {
+        const serialNumber = await generateUserSerialNumber()
+        exportToPDF(headers, rows, `Trial Balance - ${selectedYear}`, `trial-balance-${selectedYear}.pdf`, serialNumber)
+      } catch (error) {
+        console.error("Error generating serial number:", error)
+        exportToPDF(headers, rows, `Trial Balance - ${selectedYear}`, `trial-balance-${selectedYear}.pdf`, "00000000000")
+      }
       toast({
         title: "Export successful",
         description: "Trial balance opened for PDF printing",

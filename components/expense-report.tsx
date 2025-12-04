@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
-import { exportToCSV, exportToPDF } from "@/lib/export-utils"
+import { exportToCSV, exportToPDF, generateUserSerialNumber } from "@/lib/export-utils"
 import type { Expense, CategoryBreakdown } from "@/lib/types"
 
 interface ExpenseReportProps {
@@ -84,10 +84,7 @@ export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
     }).format(date)
   }
 
-  const handleExport = () => {
-    // Generate serial number for this report
-    const serialNumber = `EXP-${selectedYear}-${Date.now().toString().slice(-6)}`
-    
+  const handleExport = async () => {
     const headers = ["Date", "Category", "Description", "Amount", "Supplier", "Payment Status", "Amount Paid", "Amount Due"]
     const rows = expenses.map(e => [
       formatDate(e.date),
@@ -107,7 +104,13 @@ export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
         description: "Expense report exported as CSV",
       })
     } else {
-      exportToPDF(headers, rows, `Expense Report - ${selectedYear}`, `expense-report-${selectedYear}.pdf`, serialNumber)
+      try {
+        const serialNumber = await generateUserSerialNumber()
+        exportToPDF(headers, rows, `Expense Report - ${selectedYear}`, `expense-report-${selectedYear}.pdf`, serialNumber)
+      } catch (error) {
+        console.error("Error generating serial number:", error)
+        exportToPDF(headers, rows, `Expense Report - ${selectedYear}`, `expense-report-${selectedYear}.pdf`, "00000000000")
+      }
       toast({
         title: "Export successful",
         description: "Expense report opened for PDF printing",

@@ -107,7 +107,6 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
                   <SelectItem value="equipment">Equipment</SelectItem>
                   <SelectItem value="labor">Labor</SelectItem>
                   <SelectItem value="chemicals">Chemicals</SelectItem>
-                  <SelectItem value="fuel">Fuel</SelectItem>
                   <SelectItem value="maintenance">Maintenance</SelectItem>
                   <SelectItem value="transport">Transport</SelectItem>
                   <SelectItem value="other">Other</SelectItem>

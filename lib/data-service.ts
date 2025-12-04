@@ -197,6 +197,8 @@ export class DataService {
         miner_name: item.minerName,
         batch_number: item.batchNumber,
         processing_method: item.processingMethod,
+        product: item.product,
+        gemstone_type: item.gemstoneType,
         quantity: item.quantity,
         unit: item.unit,
         min_stock_level: item.minStockLevel,
@@ -232,6 +234,8 @@ export class DataService {
         miner_name: item.minerName,
         batch_number: item.batchNumber,
         processing_method: item.processingMethod,
+        product: item.product,
+        gemstone_type: item.gemstoneType,
         quantity: item.quantity,
         unit: item.unit,
         min_stock_level: item.minStockLevel,
@@ -490,7 +494,7 @@ export class DataService {
   }
 
   // Admin methods
-  async getAllUsers(): Promise<Array<{ user: any; category: string }>> {
+  async getAllUsers(): Promise<Array<{ user: any; category: string; serial_number: string }>> {
     try {
       const response = await apiService.getAllUsers()
       if (response.success && response.data) {
@@ -499,6 +503,45 @@ export class DataService {
       return []
     } catch (error) {
       console.error("Error fetching users:", error)
+      return []
+    }
+  }
+
+  async getSystemStats(): Promise<any> {
+    try {
+      const response = await apiService.getSystemStats()
+      if (response.success && response.data) {
+        return response.data
+      }
+      return null
+    } catch (error) {
+      console.error("Error fetching system stats:", error)
+      return null
+    }
+  }
+
+  async getSystemTrends(year?: number): Promise<any[]> {
+    try {
+      const response = await apiService.getSystemTrends(year)
+      if (response.success && response.data) {
+        return response.data
+      }
+      return []
+    } catch (error) {
+      console.error("Error fetching system trends:", error)
+      return []
+    }
+  }
+
+  async getSystemCategoryBreakdown(): Promise<any[]> {
+    try {
+      const response = await apiService.getSystemCategoryBreakdown()
+      if (response.success && response.data) {
+        return response.data
+      }
+      return []
+    } catch (error) {
+      console.error("Error fetching category breakdown:", error)
       return []
     }
   }

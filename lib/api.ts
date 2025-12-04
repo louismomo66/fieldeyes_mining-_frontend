@@ -371,6 +371,24 @@ class ApiService {
   async getAllUsers(): Promise<ApiResponse> {
     return this.makeRequest('/admin/users')
   }
+
+  async getUserSerialNumber(): Promise<ApiResponse> {
+    return this.makeRequest('/serial-number')
+  }
+
+  // Admin methods
+  async getSystemStats(): Promise<ApiResponse> {
+    return this.makeRequest('/admin/stats')
+  }
+
+  async getSystemTrends(year?: number): Promise<ApiResponse> {
+    const url = year ? `/admin/trends?year=${year}` : '/admin/trends'
+    return this.makeRequest(url)
+  }
+
+  async getSystemCategoryBreakdown(): Promise<ApiResponse> {
+    return this.makeRequest('/admin/category-breakdown')
+  }
 }
 
 export const apiService = new ApiService()

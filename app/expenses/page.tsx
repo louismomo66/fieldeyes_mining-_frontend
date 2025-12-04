@@ -29,6 +29,8 @@ export default function ExpensesPage() {
     date: new Date().toISOString().split("T")[0],
     category: "labor" as ExpenseCategory,
     description: "",
+    quantity: "",
+    unit: "",
     amount: "",
     supplierName: "",
     supplierContact: "",
@@ -77,6 +79,8 @@ export default function ExpensesPage() {
       date: new Date().toISOString().split("T")[0],
       category: "labor",
       description: "",
+      quantity: "",
+      unit: "",
       amount: "",
       supplierName: "",
       supplierContact: "",
@@ -135,6 +139,8 @@ export default function ExpensesPage() {
       date: new Date(formData.date),
       category: formData.category,
       description: formData.description,
+      quantity: formData.quantity ? Number.parseFloat(formData.quantity) : undefined,
+      unit: formData.unit || undefined,
       amount,
       supplierName: formData.supplierName,
       supplierContact: formData.supplierContact || undefined,
@@ -216,6 +222,8 @@ export default function ExpensesPage() {
       date: new Date(expense.date).toISOString().split("T")[0],
       category: expense.category,
       description: expense.description,
+      quantity: expense.quantity?.toString() || "",
+      unit: expense.unit || "",
       amount: expense.amount.toString(),
       supplierName: expense.supplierName,
       supplierContact: expense.supplierContact || "",
@@ -231,7 +239,7 @@ export default function ExpensesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-stone-900 mb-2">Expense Management</h1>
-            <p className="text-stone-600">Track and manage mining operation costs across labour, fuel, maintenance, and more</p>
+            <p className="text-stone-600">Track and manage mining operation costs across labour, maintenance, and more</p>
             <p className="text-sm text-stone-600 mt-1">💡 To capture wages previously recorded in production, add them here under the <strong>Labor</strong> category.</p>
           </div>
           <Button
@@ -281,7 +289,6 @@ export default function ExpensesPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="labor">Labor</SelectItem>
-                        <SelectItem value="fuel">Fuel</SelectItem>
                         <SelectItem value="equipment">Equipment</SelectItem>
                         <SelectItem value="maintenance">Maintenance</SelectItem>
                         <SelectItem value="transport">Transport</SelectItem>
@@ -300,6 +307,47 @@ export default function ExpensesPage() {
                       placeholder="Brief description of the expense"
                       required
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">Quantity (Optional)</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      step="0.01"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      placeholder="Enter quantity"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">Unit of Measurement (Optional)</Label>
+                    <Select
+                      value={formData.unit}
+                      onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                    >
+                      <SelectTrigger className="border-stone-300">
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="piece">Piece</SelectItem>
+                        <SelectItem value="dozen">Dozen</SelectItem>
+                        <SelectItem value="pair">Pair</SelectItem>
+                        <SelectItem value="roll">Roll</SelectItem>
+                        <SelectItem value="meters">Meters</SelectItem>
+                        <SelectItem value="inch">Inch</SelectItem>
+                        <SelectItem value="feet">Feet</SelectItem>
+                        <SelectItem value="liter">Liter</SelectItem>
+                        <SelectItem value="gram">Gram</SelectItem>
+                        <SelectItem value="kilogram">Kilogram</SelectItem>
+                        <SelectItem value="tonnes">Tonnes</SelectItem>
+                        <SelectItem value="day">Day</SelectItem>
+                        <SelectItem value="week">Week</SelectItem>
+                        <SelectItem value="month">Month</SelectItem>
+                        <SelectItem value="others">Others</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">

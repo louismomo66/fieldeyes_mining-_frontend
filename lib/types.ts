@@ -13,7 +13,7 @@ export interface User {
 export type TransactionType = "income" | "expense"
 export type PaymentStatus = "paid" | "unpaid" | "partial"
 export type MineralType = "gold" | "copper" | "cobalt" | "diamond" | "other"
-export type ExpenseCategory = "equipment" | "labor" | "chemicals" | "fuel" | "maintenance" | "transport" | "other"
+export type ExpenseCategory = "equipment" | "labor" | "chemicals" | "maintenance" | "transport" | "other"
 
 export interface Income {
   id: string
@@ -38,6 +38,8 @@ export interface Expense {
   date: Date
   category: ExpenseCategory
   description: string
+  quantity?: number
+  unit?: string
   amount: number
   supplierName: string
   supplierContact?: string
@@ -60,6 +62,14 @@ export type ProcessingMethod =
   | "dressing" | "leaching" | "elution" | "refining" | "floatation" | "grinding"
   | "screening" | "drying" | "exfoliation" | "polishing" | "washing"
 
+export type ProductType = "ore" | "concentrate" | "metal" | "rough" | "cut" | "polished" | "faceted" | "other"
+
+export type GemstoneType =
+  | "apatite" | "diamond" | "flourite" | "ruby" | "emerald" | "sapphire"
+  | "amethyst" | "aquamarine" | "garnet" | "opal" | "topaz" | "tourmaline"
+  | "pearl" | "amber" | "kyanite" | "coral" | "jade" | "malachite"
+  | "onyx" | "peridot" | "quartz" | "turquoise" | "zircon" | "other"
+
 // Inventory Types
 export interface InventoryItem {
   id: string
@@ -71,6 +81,8 @@ export interface InventoryItem {
   minerSerialNumber?: string
   batchNumber?: string
   processingMethod?: ProcessingMethod
+  product?: ProductType
+  gemstoneType?: GemstoneType
   quantity: number
   unit: string
   minStockLevel: number

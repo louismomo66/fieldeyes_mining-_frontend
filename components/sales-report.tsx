@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
-import { exportToCSV, exportToPDF } from "@/lib/export-utils"
+import { exportToCSV, exportToPDF, generateUserSerialNumber } from "@/lib/export-utils"
 import type { Income } from "@/lib/types"
 
 interface SalesReportProps {
@@ -81,10 +81,7 @@ export function SalesReport({ selectedYear }: SalesReportProps) {
     }).format(date)
   }
 
-  const handleExport = () => {
-    // Generate serial number for this report
-    const serialNumber = `SALES-${selectedYear}-${Date.now().toString().slice(-6)}`
-    
+  const handleExport = async () => {
     const headers = ["Date", "Item Name", "Mineral Type", "Quantity", "Unit", "Price per Unit", "Total Amount", "Customer", "Payment Status", "Amount Paid", "Amount Due"]
     const rows = sales.map(s => [
       formatDate(s.date),
@@ -107,11 +104,21 @@ export function SalesReport({ selectedYear }: SalesReportProps) {
         description: "Sales report exported as CSV",
       })
     } else {
-      exportToPDF(headers, rows, `Sales Report - ${selectedYear}`, `sales-report-${selectedYear}.pdf`, serialNumber)
-      toast({
-        title: "Export successful",
-        description: "Sales report opened for PDF printing",
-      })
+      try {
+        const serialNumber = await generateUserSerialNumber()
+        exportToPDF(headers, rows, `Sales Report - ${selectedYear}`, `sales-report-${selectedYear}.pdf`, serialNumber)
+        toast({
+          title: "Export successful",
+          description: "Sales report opened for PDF printing",
+        })
+      } catch (error) {
+        console.error("Error generating serial number:", error)
+        exportToPDF(headers, rows, `Sales Report - ${selectedYear}`, `sales-report-${selectedYear}.pdf`, "00000000000")
+        toast({
+          title: "Export successful",
+          description: "Sales report opened for PDF printing",
+        })
+      }
     }
   }
 

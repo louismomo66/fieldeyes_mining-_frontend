@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Factory, Edit, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { dataService } from "@/lib/data-service"
-import type { InventoryItem, ProductionFrom, ProcessingMethod } from "@/lib/types"
+import type { InventoryItem, ProductionFrom, ProcessingMethod, ProductType, GemstoneType } from "@/lib/types"
 
 const mineralCommodities = [
   "Gold", "Iron Ore", "Lead", "Zinc", "Lithium", "Nickel",
@@ -54,6 +54,8 @@ export default function ProductionManagement() {
     batch: "",
     minerName: "",
     method: "" as ProcessingMethod | "",
+    product: "" as ProductType | "",
+    gemstoneType: "" as GemstoneType | "",
     quantity: "",
     unit: "kg",
     notes: "",
@@ -111,6 +113,8 @@ export default function ProductionManagement() {
       batch: item.batchNumber || "",
       minerName: item.minerName || "",
       method: item.processingMethod || ("" as ProcessingMethod | ""),
+      product: item.product || ("" as ProductType | ""),
+      gemstoneType: item.gemstoneType || ("" as GemstoneType | ""),
       quantity: item.quantity.toString(),
       unit: unitDisplay,
       notes: "",
@@ -121,6 +125,12 @@ export default function ProductionManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate notes when "Other" is selected
+    if ((formData.product === "other" || formData.gemstoneType === "other") && !formData.notes.trim()) {
+      toast.error("Please provide details in the Notes field when 'Other' is selected")
+      return
+    }
 
     try {
       // Extract unit value (e.g., "kilogram (kg)" -> "kg")
@@ -134,6 +144,8 @@ export default function ProductionManagement() {
         minerName: formData.source === "mine" ? formData.minerName : undefined,
         batchNumber: formData.batch || undefined,
         processingMethod: formData.source === "processing" && formData.method ? formData.method : undefined,
+        product: formData.product || undefined,
+        gemstoneType: formData.mineral === "Gemstones" && formData.gemstoneType ? formData.gemstoneType : undefined,
         quantity: parseFloat(formData.quantity),
         unit: unitValue,
         minStockLevel: 0, // Default for production records
@@ -151,6 +163,8 @@ export default function ProductionManagement() {
           minerName: itemData.minerName,
           batchNumber: itemData.batchNumber,
           processingMethod: itemData.processingMethod,
+          product: itemData.product,
+          gemstoneType: itemData.gemstoneType,
           quantity: itemData.quantity!,
           unit: itemData.unit!,
           minStockLevel: itemData.minStockLevel!,
@@ -171,6 +185,8 @@ export default function ProductionManagement() {
           minerName: itemData.minerName,
           batchNumber: itemData.batchNumber,
           processingMethod: itemData.processingMethod,
+          product: itemData.product,
+          gemstoneType: itemData.gemstoneType,
           quantity: itemData.quantity!,
           unit: itemData.unit!,
           minStockLevel: itemData.minStockLevel!,
@@ -179,6 +195,7 @@ export default function ProductionManagement() {
         })
         if (newItem) {
           setProduction([newItem, ...production])
+          window.dispatchEvent(new CustomEvent('productionUpdated'))
           toast.success("Production record added successfully!")
         }
       }
@@ -195,9 +212,10 @@ export default function ProductionManagement() {
         batch: "",
         minerName: "",
         method: "" as ProcessingMethod | "",
+        product: "" as ProductType | "",
+        gemstoneType: "" as GemstoneType | "",
         quantity: "",
         unit: "kg",
-        cost: "",
         notes: "",
       })
       setSourceType("")
@@ -213,6 +231,7 @@ export default function ProductionManagement() {
     try {
       await dataService.deleteInventoryItem(id)
       setProduction(production.filter((item) => item.id !== id))
+      window.dispatchEvent(new CustomEvent('productionUpdated'))
       toast.success("Production record deleted successfully!")
     } catch (error) {
       console.error("Failed to delete production:", error)
@@ -389,6 +408,70 @@ export default function ProductionManagement() {
                   )}
 
                   <div className="space-y-2">
+                    <Label htmlFor="product">Product</Label>
+                    <Select 
+                      value={formData.product}
+                      onValueChange={(value) => setFormData({ ...formData, product: value as ProductType })}
+                      required
+                    >
+                      <SelectTrigger className="border-stone-300">
+                        <SelectValue placeholder="Select product" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ore">Ore</SelectItem>
+                        <SelectItem value="concentrate">Concentrate</SelectItem>
+                        <SelectItem value="metal">Metal</SelectItem>
+                        <SelectItem value="rough">Rough</SelectItem>
+                        <SelectItem value="cut">Cut</SelectItem>
+                        <SelectItem value="polished">Polished</SelectItem>
+                        <SelectItem value="faceted">Faceted</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.mineral === "Gemstones" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="gemstoneType">Gemstone Type</Label>
+                      <Select 
+                        value={formData.gemstoneType}
+                        onValueChange={(value) => setFormData({ ...formData, gemstoneType: value as GemstoneType })}
+                        required
+                      >
+                        <SelectTrigger className="border-stone-300">
+                          <SelectValue placeholder="Select gemstone type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="apatite">Apatite</SelectItem>
+                          <SelectItem value="diamond">Diamond</SelectItem>
+                          <SelectItem value="flourite">Flourite</SelectItem>
+                          <SelectItem value="ruby">Ruby</SelectItem>
+                          <SelectItem value="emerald">Emerald</SelectItem>
+                          <SelectItem value="sapphire">Sapphire</SelectItem>
+                          <SelectItem value="amethyst">Amethyst</SelectItem>
+                          <SelectItem value="aquamarine">Aquamarine</SelectItem>
+                          <SelectItem value="garnet">Garnet</SelectItem>
+                          <SelectItem value="opal">Opal</SelectItem>
+                          <SelectItem value="topaz">Topaz</SelectItem>
+                          <SelectItem value="tourmaline">Tourmaline</SelectItem>
+                          <SelectItem value="pearl">Pearl</SelectItem>
+                          <SelectItem value="amber">Amber</SelectItem>
+                          <SelectItem value="kyanite">Kyanite</SelectItem>
+                          <SelectItem value="coral">Coral</SelectItem>
+                          <SelectItem value="jade">Jade</SelectItem>
+                          <SelectItem value="malachite">Malachite</SelectItem>
+                          <SelectItem value="onyx">Onyx</SelectItem>
+                          <SelectItem value="peridot">Peridot</SelectItem>
+                          <SelectItem value="quartz">Quartz</SelectItem>
+                          <SelectItem value="turquoise">Turquoise</SelectItem>
+                          <SelectItem value="zircon">Zircon</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
                     <Label htmlFor="quantity">Quantity</Label>
             <Input
                       id="quantity" 
@@ -411,6 +494,7 @@ export default function ProductionManagement() {
                         <SelectValue placeholder="Select unit" />
             </SelectTrigger>
             <SelectContent>
+                        {sourceType === "mine" && <SelectItem value="sacks">Sacks</SelectItem>}
                         <SelectItem value="kg">Kilogram (kg)</SelectItem>
                         <SelectItem value="tonnes">Tonnes</SelectItem>
                         <SelectItem value="g">Grams (g)</SelectItem>
@@ -422,13 +506,25 @@ export default function ProductionManagement() {
 
 
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="notes">Notes</Label>
+                    <Label htmlFor="notes">
+                      Notes
+                      {(formData.product === "other" || formData.gemstoneType === "other") && (
+                        <span className="text-red-600 ml-1">*</span>
+                      )}
+                    </Label>
                     <Input 
                       id="notes" 
                       type="text" 
-                      placeholder="Additional information" 
+                      placeholder={
+                        formData.product === "other" 
+                          ? "Please provide details about the product type not listed"
+                          : formData.gemstoneType === "other"
+                          ? "Please provide details about the specific gemstone type not listed"
+                          : "Additional information"
+                      }
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      required={formData.product === "other" || formData.gemstoneType === "other"}
                     />
                   </div>
                 </div>
@@ -449,6 +545,8 @@ export default function ProductionManagement() {
                         batch: "",
                         minerName: "",
                         method: "" as ProcessingMethod | "",
+                        product: "" as ProductType | "",
+                        gemstoneType: "" as GemstoneType | "",
                         quantity: "",
                         unit: "kg",
                         notes: "",

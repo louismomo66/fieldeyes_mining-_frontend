@@ -72,15 +72,23 @@ export default function DashboardPage() {
         loadDashboardData()
       }
     }
+
+    const handleProductionUpdate = () => {
+      if (user) {
+        loadDashboardData()
+      }
+    }
     
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('salesUpdated', handleSalesUpdate)
     window.addEventListener('expensesUpdated', handleExpensesUpdate)
+    window.addEventListener('productionUpdated', handleProductionUpdate)
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('salesUpdated', handleSalesUpdate)
       window.removeEventListener('expensesUpdated', handleExpensesUpdate)
+      window.removeEventListener('productionUpdated', handleProductionUpdate)
     }
   }, [user])
 
@@ -107,8 +115,52 @@ export default function DashboardPage() {
     }).format(amount)
   }
 
-  // Calculate stats from data
-  const productionVolume = incomes.reduce((sum, inc) => sum + inc.quantity, 0)
+  // Calculate stats from data - production volume from inventory (production), not sales
+  // Group by unit to show accurate production volumes
+  const productionByUnit = inventory.reduce((acc, item) => {
+    const unit = item.unit || 'kg'
+    if (!acc[unit]) {
+      acc[unit] = 0
+    }
+    acc[unit] += item.quantity
+    return acc
+  }, {} as Record<string, number>)
+
+  // Format production volume display with proper units
+  const formatProductionVolume = () => {
+    const units = Object.keys(productionByUnit)
+    if (units.length === 0) {
+      return '0 kg'
+    }
+    if (units.length === 1) {
+      const unit = units[0]
+      const total = productionByUnit[unit]
+      const unitLabel = unit === 'kg' ? 'kg' : 
+                       unit === 'g' ? 'grams' :
+                       unit === 'sacks' ? 'sacks' :
+                       unit === 'oz' ? 'ounces' :
+                       unit === 'ct' ? 'carats' :
+                       unit === 'tonnes' ? 'tonnes' :
+                       unit
+      return `${total.toLocaleString()} ${unitLabel}`
+    }
+    // Multiple units - show breakdown
+    return Object.entries(productionByUnit)
+      .map(([unit, total]) => {
+        const unitLabel = unit === 'kg' ? 'kg' : 
+                         unit === 'g' ? 'grams' :
+                         unit === 'sacks' ? 'sacks' :
+                         unit === 'oz' ? 'ounces' :
+                         unit === 'ct' ? 'carats' :
+                         unit === 'tonnes' ? 'tonnes' :
+                         unit
+        return `${total.toLocaleString()} ${unitLabel}`
+      })
+      .join(', ')
+  }
+
+  const productionVolumeDisplay = formatProductionVolume()
+  const totalProductionVolume = Object.values(productionByUnit).reduce((sum, val) => sum + val, 0)
   // Count unique active pits from production/inventory data
   const activePits = new Set(
     inventory
@@ -228,10 +280,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-stone-900">
-                {productionVolume.toLocaleString()} kg
+                {productionVolumeDisplay}
               </div>
               <p className="text-xs text-emerald-700 mt-1">
-                +8.2% from last month
+                Total: {totalProductionVolume.toLocaleString()} units
               </p>
             </CardContent>
           </Card>
