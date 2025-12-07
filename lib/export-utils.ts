@@ -123,14 +123,14 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
     const logoImg = logoBase64 ? `<img src="${logoBase64}" alt="Company Logo" class="logo" />` : ''
     const generatedDate = new Date().toLocaleString()
     
-    // Create a printable HTML document
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
+  // Create a printable HTML document
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
           <title>${escapeHtml(title)}</title>
-          <style>
-            @media print {
+        <style>
+          @media print {
               @page { 
                 margin: 1cm;
                 @bottom-center {
@@ -140,17 +140,17 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
                 }
               }
               .no-print { display: none; }
-            }
-            body {
-              font-family: Arial, sans-serif;
-              padding: 20px;
+          }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
               margin: 0;
             }
             .header {
               display: flex;
               align-items: center;
               justify-content: space-between;
-              margin-bottom: 20px;
+            margin-bottom: 20px;
               border-bottom: 2px solid #333;
               padding-bottom: 15px;
             }
@@ -165,41 +165,41 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
             .header-info h1 {
               margin: 0;
               font-size: 24px;
-              color: #333;
-            }
+            color: #333;
+          }
             .serial-number {
               font-size: 12px;
               color: #666;
               margin-top: 5px;
             }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-            }
-            th, td {
-              border: 1px solid #ddd;
-              padding: 8px;
-              text-align: left;
-            }
-            th {
-              background-color: #f2f2f2;
-              font-weight: bold;
-            }
-            tr:nth-child(even) {
-              background-color: #f9f9f9;
-            }
-            .footer {
-              margin-top: 30px;
-              text-align: center;
-              font-size: 12px;
-              color: #666;
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+          }
+          th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+          }
+          tr:nth-child(even) {
+            background-color: #f9f9f9;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
               border-top: 1px solid #ddd;
               padding-top: 10px;
-            }
-          </style>
-        </head>
-        <body>
+          }
+        </style>
+      </head>
+      <body>
           <div class="header">
             ${logoImg}
             <div class="header-info">
@@ -207,22 +207,22 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
               ${serialNumber ? `<div class="serial-number">Serial Number: ${escapeHtml(serialNumber)}</div>` : ""}
             </div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                ${headers.map(h => `<th>${escapeHtml(h)}</th>`).join("")}
-              </tr>
-            </thead>
-            <tbody>
+        <table>
+          <thead>
+            <tr>
+              ${headers.map(h => `<th>${escapeHtml(h)}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
               ${formattedRows.map(row => 
-                `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`
-              ).join("")}
-            </tbody>
-          </table>
-          <div class="footer">
+              `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`
+            ).join("")}
+          </tbody>
+        </table>
+        <div class="footer">
             Generated on ${generatedDate}
-          </div>
-          <script>
+        </div>
+        <script>
             (function() {
               // Immediately update document title to prevent blob URL from showing
               if (document.title === '' || document.title.includes('blob:')) {
@@ -237,25 +237,25 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
                 });
               } catch(e) {}
               
-              window.onload = function() {
+          window.onload = function() {
                 document.title = "${escapeHtml(title)}";
                 // Small delay to ensure everything is loaded
                 setTimeout(() => {
-                  window.print();
+            window.print();
                 }, 500);
-              }
+          }
             })();
-          </script>
-        </body>
-      </html>
-    `
-    
-    const blob = new Blob([htmlContent], { type: "text/html" })
-    const url = URL.createObjectURL(blob)
-    const printWindow = window.open(url, "_blank")
-    
-    if (printWindow) {
-      printWindow.onload = () => {
+        </script>
+      </body>
+    </html>
+  `
+  
+  const blob = new Blob([htmlContent], { type: "text/html" })
+  const url = URL.createObjectURL(blob)
+  const printWindow = window.open(url, "_blank")
+  
+  if (printWindow) {
+    printWindow.onload = () => {
         // Immediately set title to prevent blob URL from showing
         printWindow.document.title = title
         // Try to update history to remove blob URL
@@ -263,15 +263,15 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
           printWindow.history.replaceState({}, title, window.location.origin)
         } catch(e) {}
         
+      setTimeout(() => {
+        printWindow.print()
+        // Clean up after printing
         setTimeout(() => {
-          printWindow.print()
-          // Clean up after printing
-          setTimeout(() => {
-            URL.revokeObjectURL(url)
-          }, 1000)
+          URL.revokeObjectURL(url)
+        }, 1000)
         }, 500)
-      }
     }
+  }
   })
 }
 
