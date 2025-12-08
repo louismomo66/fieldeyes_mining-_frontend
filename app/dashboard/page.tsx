@@ -10,6 +10,12 @@ import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Package } from "luci
 import { dataService } from "@/lib/data-service"
 import type { FinancialSummary, Income, Expense, InventoryItem } from "@/lib/types"
 
+const StatValue = ({ children }: { children: React.ReactNode }) => (
+  <span className="block w-full text-2xl font-bold text-stone-900 break-all sm:break-normal leading-tight tracking-tight">
+    {children}
+  </span>
+)
+
 export default function DashboardPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
@@ -237,9 +243,7 @@ export default function DashboardPage() {
               <DollarSign className="h-5 w-5 text-emerald-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-stone-900">
-                {formatCurrency(totalIncome)}
-              </div>
+              <StatValue>{formatCurrency(totalIncome)}</StatValue>
               <p className="text-xs text-emerald-700 mt-1">
                 +12.5% from last month
               </p>
@@ -251,9 +255,7 @@ export default function DashboardPage() {
               <TrendingDown className="h-5 w-5 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-stone-900">
-                {formatCurrency(totalExpenses)}
-              </div>
+              <StatValue>{formatCurrency(totalExpenses)}</StatValue>
               <p className="text-xs text-red-600 mt-1">
                 Includes labor, fuel, maintenance, and other costs
               </p>
@@ -265,9 +267,7 @@ export default function DashboardPage() {
               <DollarSign className="h-5 w-5 text-emerald-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-stone-900">
-                {formatCurrency(netProfit)}
-              </div>
+              <StatValue>{formatCurrency(netProfit)}</StatValue>
               <p className="text-xs text-emerald-700 mt-1">
                 {netProfit > 0 ? "+" : ""}{((netProfit / (totalIncome || 1)) * 100).toFixed(1)}% margin
               </p>
@@ -279,9 +279,7 @@ export default function DashboardPage() {
               <Package className="h-5 w-5 text-amber-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-stone-900">
-                {productionVolumeDisplay}
-              </div>
+              <StatValue>{productionVolumeDisplay}</StatValue>
               <p className="text-xs text-emerald-700 mt-1">
                 Total: {totalProductionVolume.toLocaleString()} units
               </p>
@@ -293,9 +291,7 @@ export default function DashboardPage() {
               <TrendingUp className="h-5 w-5 text-amber-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-stone-900">
-                {activePits}
-              </div>
+              <StatValue>{activePits}</StatValue>
               <p className="text-xs text-emerald-700 mt-1">
                 +2 this month
               </p>
