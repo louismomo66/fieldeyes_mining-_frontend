@@ -10,10 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Eye, EyeOff, Shield } from "lucide-react"
+import { AlertCircle, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Checkbox } from "@/components/ui/checkbox"
 
 export default function SignupPage() {
   const [name, setName] = useState("")
@@ -21,9 +20,7 @@ export default function SignupPage() {
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [adminCode, setAdminCode] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [showAdminCode, setShowAdminCode] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { signup } = useAuth()
@@ -46,7 +43,7 @@ export default function SignupPage() {
 
     setIsLoading(true)
 
-    const result = await signup(email, password, name, phone || undefined, adminCode || undefined)
+    const result = await signup(email, password, name, phone || undefined, undefined)
 
     if (result.success) {
       router.push("/dashboard")
@@ -162,42 +159,6 @@ export default function SignupPage() {
                 required
                 className="border-stone-300"
               />
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isAdmin"
-                  checked={showAdminCode}
-                  onCheckedChange={(checked) => {
-                    setShowAdminCode(checked as boolean)
-                    if (!checked) setAdminCode("")
-                  }}
-                />
-                <Label
-                  htmlFor="isAdmin"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
-                >
-                  <Shield className="h-4 w-4 text-amber-600" />I have an admin code
-                </Label>
-              </div>
-
-              {showAdminCode && (
-                <div className="space-y-2 pl-6">
-                  <Label htmlFor="adminCode" className="text-stone-700 text-sm">
-                    Admin Code
-                  </Label>
-                  <Input
-                    id="adminCode"
-                    type="text"
-                    placeholder="Enter admin code"
-                    value={adminCode}
-                    onChange={(e) => setAdminCode(e.target.value)}
-                    className="border-amber-300 focus-visible:ring-amber-600"
-                  />
-                  <p className="text-xs text-stone-500">Enter the admin code to create an administrator account</p>
-                </div>
-              )}
             </div>
 
             {error && (
