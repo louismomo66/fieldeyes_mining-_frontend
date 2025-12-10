@@ -71,6 +71,17 @@ interface CategoryBreakdown {
   percentage: number
 }
 
+interface DailyUsage {
+  date: string
+  active_users: number
+  new_users: number
+  total_income: number
+  total_expenses: number
+  income_count: number
+  expense_count: number
+  production_count: number
+}
+
 const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4']
 
 export default function AdminPage() {
@@ -85,6 +96,8 @@ export default function AdminPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedUser, setSelectedUser] = useState<UserCategory | null>(null)
   const [userDetailsOpen, setUserDetailsOpen] = useState(false)
+  const [dailyUsage, setDailyUsage] = useState<DailyUsage[]>([])
+  const [usageDateRange, setUsageDateRange] = useState<'7' | '14' | '30'>('7')
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -120,6 +133,11 @@ export default function AdminPage() {
       setSystemStats(stats)
       setTrends(trendsData)
       setCategoryBreakdown(breakdown)
+      // Fetch daily usage for default 7 days
+      const endDate = new Date().toISOString().split('T')[0]
+      const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const dailyData = await dataService.getDailyUsage(startDate, endDate)
+      setDailyUsage(dailyData)
     } catch (error) {
       console.error("Error loading admin data:", error)
       toast({
@@ -186,6 +204,23 @@ export default function AdminPage() {
     count: c.count,
     percentage: c.percentage,
   }))
+
+  // Prepare daily usage chart data
+  const dailyUsageChartData = dailyUsage.map(d => ({
+    date: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    "Active Users": d.active_users,
+    "New Users": d.new_users,
+    Transactions: d.income_count + d.expense_count,
+    Production: d.production_count,
+  }))
+
+  const handleUsageDateRangeChange = async (days: '7' | '14' | '30') => {
+    setUsageDateRange(days)
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const dailyData = await dataService.getDailyUsage(startDate, endDate)
+    setDailyUsage(dailyData)
+  }
 
   return (
     <DashboardLayout>
@@ -369,6 +404,90 @@ export default function AdminPage() {
                 </>
               )}
             </div>
+
+            {/* Daily Usage Chart */}
+            <Card className="border-stone-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-purple-600" />
+                    Daily Platform Usage
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleUsageDateRangeChange('7')}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${usageDateRange === '7'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        }`}
+                    >
+                      7 Days
+                    </button>
+                    <button
+                      onClick={() => handleUsageDateRangeChange('14')}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${usageDateRange === '14'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        }`}
+                    >
+                      14 Days
+                    </button>
+                    <button
+                      onClick={() => handleUsageDateRangeChange('30')}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${usageDateRange === '30'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                        }`}
+                    >
+                      30 Days
+                    </button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {dailyUsageChartData.length === 0 ? (
+                  <p className="text-center text-stone-500 py-8">No usage data available</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={dailyUsageChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="Active Users"
+                        stroke="#8b5cf6"
+                        strokeWidth={2}
+                        dot={{ fill: '#8b5cf6', r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="New Users"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={{ fill: '#10b981', r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Transactions"
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                        dot={{ fill: '#f59e0b', r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Production"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{ fill: '#3b82f6', r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Users Tab */}

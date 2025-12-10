@@ -392,6 +392,14 @@ class ApiService {
   async getSystemCategoryBreakdown(): Promise<ApiResponse> {
     return this.makeRequest('/admin/category-breakdown')
   }
+
+  async getDailyUsage(startDate?: string, endDate?: string): Promise<ApiResponse> {
+    let url = '/admin/daily-usage'
+    if (startDate && endDate) {
+      url += `?start_date=${startDate}&end_date=${endDate}`
+    }
+    return this.makeRequest(url)
+  }
 }
 
 export const apiService = new ApiService()

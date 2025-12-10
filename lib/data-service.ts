@@ -551,6 +551,19 @@ export class DataService {
       return []
     }
   }
+
+  async getDailyUsage(startDate?: string, endDate?: string): Promise<any[]> {
+    try {
+      const response = await apiService.getDailyUsage(startDate, endDate)
+      if (response.success && response.data) {
+        return response.data
+      }
+      return []
+    } catch (error) {
+      console.error("Error fetching daily usage:", error)
+      return []
+    }
+  }
 }
 
 export const dataService = new DataService()
