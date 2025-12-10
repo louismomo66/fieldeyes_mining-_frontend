@@ -41,7 +41,7 @@ export default function TransactionsPage() {
           dataService.getIncomes(),
           dataService.getExpenses()
         ])
-        
+
         const transactions: Transaction[] = [
           ...incomes.map((income) => ({
             ...income,
@@ -52,7 +52,7 @@ export default function TransactionsPage() {
             type: "expense" as const,
           })),
         ].sort((a, b) => b.date.getTime() - a.date.getTime())
-        
+
         setAllTransactions(transactions)
       } catch (error) {
         console.error("Failed to load transactions:", error)
@@ -95,7 +95,7 @@ export default function TransactionsPage() {
     // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
-      const description = transaction.type === "income" 
+      const description = transaction.type === "income"
         ? `${(transaction as Income).mineralType} - ${(transaction as Income).customerName}`.toLowerCase()
         : `${(transaction as Expense).category} - ${(transaction as Expense).description}`.toLowerCase()
       return description.includes(searchLower)
@@ -146,7 +146,7 @@ export default function TransactionsPage() {
   const handleExport = () => {
     const headers = ["Date", "Type", "Description", "Amount", "Status", "Amount Paid", "Amount Due"]
     const rows = filteredTransactions.map((t) => {
-      const description = t.type === "income" 
+      const description = t.type === "income"
         ? `${(t as Income).mineralType} - ${(t as Income).customerName}`
         : `${(t as Expense).category} - ${(t as Expense).description}`
       const amount = t.type === "income" ? (t as Income).totalAmount : (t as Expense).amount
@@ -334,7 +334,7 @@ export default function TransactionsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <h3 className="font-semibold text-stone-900 truncate">
-                            {transaction.type === "income" 
+                            {transaction.type === "income"
                               ? `${(transaction as Income).mineralType} - ${(transaction as Income).customerName}`
                               : `${(transaction as Expense).category} - ${(transaction as Expense).description}`}
                           </h3>
@@ -367,8 +367,8 @@ export default function TransactionsPage() {
                       >
                         {transaction.type === "income" ? "+" : "-"}
                         {formatCurrency(
-                          transaction.type === "income" 
-                            ? (transaction as Income & { type: "income" }).totalAmount 
+                          transaction.type === "income"
+                            ? (transaction as Income & { type: "income" }).totalAmount
                             : (transaction as Expense & { type: "expense" }).amount
                         )}
                       </p>

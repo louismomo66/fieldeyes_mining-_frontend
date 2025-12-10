@@ -109,6 +109,7 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
                   <SelectItem value="chemicals">Chemicals</SelectItem>
                   <SelectItem value="maintenance">Maintenance</SelectItem>
                   <SelectItem value="transport">Transport</SelectItem>
+                  <SelectItem value="trips">Trips</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>

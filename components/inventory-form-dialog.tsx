@@ -23,6 +23,7 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
+    date: item?.date ? new Date(item.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     name: item?.name || "",
     type: item?.type || ("mineral" as "mineral" | "supply"),
     from: item?.from || ("" as ProductionFrom | ""),
@@ -41,6 +42,7 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
 
     const itemData: Partial<InventoryItem> = {
       ...item,
+      date: new Date(formData.date),
       name: formData.name,
       type: formData.type,
       from: formData.type === "mineral" && formData.from ? formData.from : undefined,
@@ -83,6 +85,17 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="date">Production Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="name">Item Name</Label>
             <Input
               id="name"
@@ -110,8 +123,8 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
             {formData.type === "mineral" && (
               <div className="space-y-2">
                 <Label htmlFor="from">From</Label>
-                <Select 
-                  value={formData.from || ""} 
+                <Select
+                  value={formData.from || ""}
                   onValueChange={(value: ProductionFrom) => setFormData({ ...formData, from: value, processingMethod: "", pitNumber: "", minerName: "", minerSerialNumber: "" })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select source" />
@@ -161,8 +174,8 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
           {formData.type === "mineral" && formData.from === "processing" && (
             <div className="space-y-2 border-t pt-4">
               <Label htmlFor="processingMethod">Processing Method</Label>
-              <Select 
-                value={formData.processingMethod || ""} 
+              <Select
+                value={formData.processingMethod || ""}
                 onValueChange={(value: ProcessingMethod) => setFormData({ ...formData, processingMethod: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select processing method" />

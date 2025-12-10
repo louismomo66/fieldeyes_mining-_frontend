@@ -11,7 +11,10 @@ import { dataService } from "@/lib/data-service"
 import type { FinancialSummary, Income, Expense, InventoryItem } from "@/lib/types"
 
 const StatValue = ({ children }: { children: React.ReactNode }) => (
-  <span className="block w-full text-2xl font-bold text-stone-900 break-all sm:break-normal leading-tight tracking-tight">
+  <span
+    className="block w-full text-lg sm:text-xl md:text-2xl font-bold text-stone-900 break-words leading-tight tracking-tight"
+    title={typeof children === 'string' || typeof children === 'number' ? String(children) : undefined}
+  >
     {children}
   </span>
 )
@@ -59,14 +62,14 @@ export default function DashboardPage() {
     }
 
     loadDashboardData()
-    
+
     // Refresh data when page becomes visible or when sales are updated
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && user) {
         loadDashboardData()
       }
     }
-    
+
     const handleSalesUpdate = () => {
       if (user) {
         loadDashboardData()
@@ -84,12 +87,12 @@ export default function DashboardPage() {
         loadDashboardData()
       }
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('salesUpdated', handleSalesUpdate)
     window.addEventListener('expensesUpdated', handleExpensesUpdate)
     window.addEventListener('productionUpdated', handleProductionUpdate)
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('salesUpdated', handleSalesUpdate)
@@ -141,25 +144,25 @@ export default function DashboardPage() {
     if (units.length === 1) {
       const unit = units[0]
       const total = productionByUnit[unit]
-      const unitLabel = unit === 'kg' ? 'kg' : 
-                       unit === 'g' ? 'grams' :
-                       unit === 'sacks' ? 'sacks' :
-                       unit === 'oz' ? 'ounces' :
-                       unit === 'ct' ? 'carats' :
-                       unit === 'tonnes' ? 'tonnes' :
-                       unit
+      const unitLabel = unit === 'kg' ? 'kg' :
+        unit === 'g' ? 'grams' :
+          unit === 'sacks' ? 'sacks' :
+            unit === 'oz' ? 'ounces' :
+              unit === 'ct' ? 'carats' :
+                unit === 'tonnes' ? 'tonnes' :
+                  unit
       return `${total.toLocaleString()} ${unitLabel}`
     }
     // Multiple units - show breakdown
     return Object.entries(productionByUnit)
       .map(([unit, total]) => {
-        const unitLabel = unit === 'kg' ? 'kg' : 
-                         unit === 'g' ? 'grams' :
-                         unit === 'sacks' ? 'sacks' :
-                         unit === 'oz' ? 'ounces' :
-                         unit === 'ct' ? 'carats' :
-                         unit === 'tonnes' ? 'tonnes' :
-                         unit
+        const unitLabel = unit === 'kg' ? 'kg' :
+          unit === 'g' ? 'grams' :
+            unit === 'sacks' ? 'sacks' :
+              unit === 'oz' ? 'ounces' :
+                unit === 'ct' ? 'carats' :
+                  unit === 'tonnes' ? 'tonnes' :
+                    unit
         return `${total.toLocaleString()} ${unitLabel}`
       })
       .join(', ')

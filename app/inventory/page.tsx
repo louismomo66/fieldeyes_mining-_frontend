@@ -70,7 +70,7 @@ export default function ProductionManagement() {
   useEffect(() => {
     const fetchProduction = async () => {
       if (!user) return
-      
+
       try {
         setLoading(true)
         const data = await dataService.getInventory()
@@ -105,7 +105,7 @@ export default function ProductionManagement() {
     else if (item.unit === "tonnes") unitDisplay = "tonnes"
 
     setFormData({
-      date: new Date(item.lastUpdated).toISOString().split("T")[0],
+      date: item.date ? new Date(item.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       mineral: item.name,
       type: item.type,
       source: item.from || ("" as ProductionFrom | ""),
@@ -139,6 +139,7 @@ export default function ProductionManagement() {
       const itemData: Partial<InventoryItem> = {
         name: formData.mineral,
         type: formData.type,
+        date: new Date(formData.date),
         from: formData.source || undefined,
         pitNumber: formData.source === "mine" ? formData.pit : undefined,
         minerName: formData.source === "mine" ? formData.minerName : undefined,
@@ -150,7 +151,7 @@ export default function ProductionManagement() {
         unit: unitValue,
         minStockLevel: 0, // Default for production records
         currentValue: 0, // Production cost removed - set to 0
-        lastUpdated: new Date(formData.date),
+        lastUpdated: new Date(),
       }
 
       if (editingItem) {
@@ -158,6 +159,7 @@ export default function ProductionManagement() {
         const updatedItem = await dataService.updateInventoryItem(editingItem.id, {
           name: itemData.name!,
           type: itemData.type!,
+          date: itemData.date,
           from: itemData.from,
           pitNumber: itemData.pitNumber,
           minerName: itemData.minerName,
@@ -175,11 +177,12 @@ export default function ProductionManagement() {
           setProduction(production.map(p => p.id === editingItem.id ? updatedItem : p))
           toast.success("Production record updated successfully!")
         }
-    } else {
+      } else {
         // Create new production record
         const newItem = await dataService.createInventoryItem({
           name: itemData.name!,
           type: itemData.type!,
+          date: itemData.date,
           from: itemData.from,
           pitNumber: itemData.pitNumber,
           minerName: itemData.minerName,
@@ -199,7 +202,7 @@ export default function ProductionManagement() {
           toast.success("Production record added successfully!")
         }
       }
-      
+
       setShowForm(false)
       setEditingItem(null)
       // Reset form
@@ -262,7 +265,7 @@ export default function ProductionManagement() {
         {/* Header with Instructions */}
         <div className="rounded-lg border-l-4 border-amber-600 bg-amber-50/50 p-4">
           <div className="flex items-start justify-between">
-          <div>
+            <div>
               <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-2">
                 <Factory className="h-8 w-8 text-amber-700" />
                 Production
@@ -274,9 +277,9 @@ export default function ProductionManagement() {
                 💡 Click "Add Production" button to record a new production record with mineral details and quantities
               </p>
             </div>
-            <Button 
-              onClick={() => setShowForm(!showForm)} 
-              className="gap-2 shadow-md bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white" 
+            <Button
+              onClick={() => setShowForm(!showForm)}
+              className="gap-2 shadow-md bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
               size="lg"
             >
               <Plus className="h-5 w-5" />
@@ -295,22 +298,22 @@ export default function ProductionManagement() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="date">Date</Label>
-                    <Input 
-                      id="date" 
-                      type="date" 
+                    <Input
+                      id="date"
+                      type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      required 
+                      required
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="mineral">Mineral Commodity</Label>
-                    <Select 
-                      value={formData.mineral} 
+                    <Select
+                      value={formData.mineral}
                       onValueChange={(value) => {
                         setFormData({ ...formData, mineral: value })
-                      }} 
+                      }}
                       required
                     >
                       <SelectTrigger className="border-stone-300">
@@ -328,12 +331,12 @@ export default function ProductionManagement() {
 
                   <div className="space-y-2">
                     <Label htmlFor="source">From</Label>
-                    <Select 
-                      value={sourceType} 
+                    <Select
+                      value={sourceType}
                       onValueChange={(value) => {
                         setSourceType(value as ProductionFrom)
                         setFormData({ ...formData, source: value as ProductionFrom, pit: "", minerName: "", method: "" as ProcessingMethod })
-                      }} 
+                      }}
                       required
                     >
                       <SelectTrigger className="border-stone-300">
@@ -350,36 +353,36 @@ export default function ProductionManagement() {
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="pit">Pit Number / Miner Name</Label>
-                        <Input 
-                          id="pit" 
-                          type="text" 
-                          placeholder="e.g., Pit 1" 
+                        <Input
+                          id="pit"
+                          type="text"
+                          placeholder="e.g., Pit 1"
                           value={formData.pit}
                           onChange={(e) => setFormData({ ...formData, pit: e.target.value })}
-                          required 
+                          required
                         />
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="minerName">Miner Name (Buying Centers)</Label>
-                        <Input 
-                          id="minerName" 
-                          type="text" 
+                        <Input
+                          id="minerName"
+                          type="text"
                           placeholder="Name of miner"
                           value={formData.minerName}
                           onChange={(e) => setFormData({ ...formData, minerName: e.target.value })}
                         />
-        </div>
+                      </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="batch">Batch Number</Label>
-                        <Input 
-                          id="batch" 
-                          type="text" 
-                          placeholder="Serial number" 
+                        <Input
+                          id="batch"
+                          type="text"
+                          placeholder="Serial number"
                           value={formData.batch}
                           onChange={(e) => setFormData({ ...formData, batch: e.target.value })}
-                          required 
+                          required
                         />
                       </div>
                     </>
@@ -388,7 +391,7 @@ export default function ProductionManagement() {
                   {sourceType === "processing" && (
                     <div className="space-y-2">
                       <Label htmlFor="method">Processing Method</Label>
-                      <Select 
+                      <Select
                         value={formData.method}
                         onValueChange={(value) => setFormData({ ...formData, method: value as ProcessingMethod })}
                         required
@@ -409,7 +412,7 @@ export default function ProductionManagement() {
 
                   <div className="space-y-2">
                     <Label htmlFor="product">Product</Label>
-                    <Select 
+                    <Select
                       value={formData.product}
                       onValueChange={(value) => setFormData({ ...formData, product: value as ProductType })}
                       required
@@ -433,7 +436,7 @@ export default function ProductionManagement() {
                   {formData.mineral === "Gemstones" && (
                     <div className="space-y-2">
                       <Label htmlFor="gemstoneType">Gemstone Type</Label>
-                      <Select 
+                      <Select
                         value={formData.gemstoneType}
                         onValueChange={(value) => setFormData({ ...formData, gemstoneType: value as GemstoneType })}
                         required
@@ -473,36 +476,36 @@ export default function ProductionManagement() {
 
                   <div className="space-y-2">
                     <Label htmlFor="quantity">Quantity</Label>
-            <Input
-                      id="quantity" 
-                      type="number" 
-                      step="0.01" 
+                    <Input
+                      id="quantity"
+                      type="number"
+                      step="0.01"
                       value={formData.quantity}
                       onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                      required 
-            />
-          </div>
+                      required
+                    />
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="unit">Unit</Label>
-                    <Select 
+                    <Select
                       value={formData.unit}
                       onValueChange={(value) => setFormData({ ...formData, unit: value })}
                       required
                     >
                       <SelectTrigger className="border-stone-300">
                         <SelectValue placeholder="Select unit" />
-            </SelectTrigger>
-            <SelectContent>
+                      </SelectTrigger>
+                      <SelectContent>
                         {sourceType === "mine" && <SelectItem value="sacks">Sacks</SelectItem>}
                         <SelectItem value="kg">Kilogram (kg)</SelectItem>
                         <SelectItem value="tonnes">Tonnes</SelectItem>
                         <SelectItem value="g">Grams (g)</SelectItem>
                         <SelectItem value="oz">Ounces (oz)</SelectItem>
                         <SelectItem value="ct">Carats (ct)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
 
                   <div className="space-y-2 md:col-span-2">
@@ -512,15 +515,15 @@ export default function ProductionManagement() {
                         <span className="text-red-600 ml-1">*</span>
                       )}
                     </Label>
-                    <Input 
-                      id="notes" 
-                      type="text" 
+                    <Input
+                      id="notes"
+                      type="text"
                       placeholder={
-                        formData.product === "other" 
+                        formData.product === "other"
                           ? "Please provide details about the product type not listed"
                           : formData.gemstoneType === "other"
-                          ? "Please provide details about the specific gemstone type not listed"
-                          : "Additional information"
+                            ? "Please provide details about the specific gemstone type not listed"
+                            : "Additional information"
                       }
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -530,9 +533,9 @@ export default function ProductionManagement() {
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => {
                       setShowForm(false)
                       setEditingItem(null)
@@ -557,20 +560,20 @@ export default function ProductionManagement() {
                   >
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
                     className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
                   >
                     {editingItem ? "Update Production" : "Add Production"}
                   </Button>
-              </div>
+                </div>
               </form>
             </CardContent>
           </Card>
         )}
 
         {/* Production Table */}
-              <Card className="border-stone-200">
+        <Card className="border-stone-200">
           <CardHeader>
             <CardTitle>Production Records</CardTitle>
           </CardHeader>
@@ -578,8 +581,8 @@ export default function ProductionManagement() {
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-            </div>
-          ) : (
+              </div>
+            ) : (
               <div className="rounded-md border border-stone-200 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -601,10 +604,14 @@ export default function ProductionManagement() {
                       </tr>
                     ) : (
                       production
-                        .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+                        .sort((a, b) => {
+                          const dateA = a.date ? new Date(a.date).getTime() : new Date(a.lastUpdated).getTime()
+                          const dateB = b.date ? new Date(b.date).getTime() : new Date(b.lastUpdated).getTime()
+                          return dateB - dateA
+                        })
                         .map((item) => (
                           <tr key={item.id} className="border-b border-stone-200 last:border-0">
-                            <td className="p-3 text-stone-700">{formatDate(item.lastUpdated)}</td>
+                            <td className="p-3 text-stone-700">{item.date ? formatDate(item.date) : formatDate(item.lastUpdated)}</td>
                             <td className="p-3 text-stone-700 font-medium">{item.name}</td>
                             <td className="p-3">
                               {item.from === "mine" ? (
@@ -634,26 +641,26 @@ export default function ProductionManagement() {
                                   onClick={() => handleEdit(item)}
                                 >
                                   <Edit className="h-4 w-4 text-amber-600" />
-                            </Button>
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
                                   onClick={() => handleDelete(item.id)}
                                 >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))
                     )}
                   </tbody>
                 </table>
-                    </div>
+              </div>
             )}
-                  </CardContent>
-                </Card>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   )

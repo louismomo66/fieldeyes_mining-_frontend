@@ -292,6 +292,7 @@ export default function ExpensesPage() {
                         <SelectItem value="equipment">Equipment</SelectItem>
                         <SelectItem value="maintenance">Maintenance</SelectItem>
                         <SelectItem value="transport">Transport</SelectItem>
+                        <SelectItem value="trips">Trips</SelectItem>
                         <SelectItem value="chemicals">Chemicals</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>

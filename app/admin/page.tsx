@@ -7,6 +7,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Loader2, Users, Shield, TrendingUp, TrendingDown, BarChart3, Eye, FileText, Activity, DollarSign } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
@@ -82,13 +83,15 @@ export default function AdminPage() {
   const [trends, setTrends] = useState<MonthlyTrend[]>([])
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdown[]>([])
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedUser, setSelectedUser] = useState<UserCategory | null>(null)
+  const [userDetailsOpen, setUserDetailsOpen] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login")
       return
     }
-    
+
     if (!authLoading && user && user.role !== "admin") {
       router.push("/dashboard")
       toast({
@@ -197,7 +200,7 @@ export default function AdminPage() {
               <div>
                 <h1 className="text-3xl font-bold text-stone-900">Admin Dashboard</h1>
                 <p className="text-stone-600 mt-1">
-                System overview and control
+                  System overview and control
                 </p>
               </div>
             </div>
@@ -245,7 +248,7 @@ export default function AdminPage() {
               <CardContent>
                 <p className="text-2xl font-bold text-blue-700">{formatCurrency(systemStats.total_profit)}</p>
                 <p className="text-xs text-stone-600 mt-1">
-                  {systemStats.total_income > 0 
+                  {systemStats.total_income > 0
                     ? `${((systemStats.total_profit / systemStats.total_income) * 100).toFixed(1)}% margin`
                     : "0% margin"}
                 </p>
@@ -355,7 +358,7 @@ export default function AdminPage() {
                         <div className="flex justify-between items-center">
                           <span className="text-stone-600">Engagement</span>
                           <span className="font-semibold">
-                            {systemStats.total_users > 0 
+                            {systemStats.total_users > 0
                               ? `${((systemStats.active_users / systemStats.total_users) * 100).toFixed(1)}%`
                               : "0%"}
                           </span>
@@ -396,22 +399,29 @@ export default function AdminPage() {
                       </thead>
                       <tbody>
                         {users.map((userCategory, index) => (
-                          <tr key={`user-${userCategory.user.id}-${index}`} className="border-b border-stone-200 last:border-0">
-                            <td className="p-3 text-stone-700 font-mono font-semibold">{userCategory.serial_number || "-"}</td>
-                            <td className="p-3 text-stone-700 font-medium">{userCategory.user.name}</td>
-                            <td className="p-3 text-stone-700">{userCategory.user.email}</td>
-                            <td className="p-3 text-stone-700">{userCategory.user.phone || "-"}</td>
-                            <td className="p-3">
+                          <tr
+                            key={`user-${userCategory.user.id}-${index}`}
+                            className="border-b border-stone-200 last:border-0 cursor-pointer hover:bg-stone-100 transition-colors"
+                            onClick={() => {
+                              setSelectedUser(userCategory)
+                              setUserDetailsOpen(true)
+                            }}
+                          >
+                            <td className="p-3 text-stone-700 font-mono font-semibold whitespace-nowrap">{userCategory.serial_number || "-"}</td>
+                            <td className="p-3 text-stone-700 font-medium whitespace-nowrap">{userCategory.user.name}</td>
+                            <td className="p-3 text-stone-700 whitespace-nowrap">{userCategory.user.email}</td>
+                            <td className="p-3 text-stone-700 whitespace-nowrap">{userCategory.user.phone || "-"}</td>
+                            <td className="p-3 whitespace-nowrap">
                               <Badge variant="outline" className={getCategoryColor(userCategory.category)}>
                                 {userCategory.category}
                               </Badge>
                             </td>
-                            <td className="p-3">
+                            <td className="p-3 whitespace-nowrap">
                               <Badge variant="outline" className={userCategory.user.role === "admin" ? "bg-purple-100 text-purple-700 border-purple-200" : "bg-stone-100 text-stone-700 border-stone-200"}>
                                 {userCategory.user.role}
                               </Badge>
                             </td>
-                            <td className="p-3 text-stone-600 text-xs">
+                            <td className="p-3 text-stone-600 text-xs whitespace-nowrap">
                               {new Date(userCategory.user.created_at).toLocaleDateString()}
                             </td>
                           </tr>
@@ -677,7 +687,90 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* User Details Dialog */}
+        <Dialog open={userDetailsOpen} onOpenChange={setUserDetailsOpen}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Details
+              </DialogTitle>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-6">
+                {/* Profile Info */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-stone-900 border-b border-stone-200 pb-2">Profile Information</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-stone-500">Name</p>
+                      <p className="font-medium text-stone-900">{selectedUser.user.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-stone-500">Email</p>
+                      <p className="font-medium text-stone-900">{selectedUser.user.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-stone-500">Phone</p>
+                      <p className="font-medium text-stone-900">{selectedUser.user.phone || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-stone-500">Serial Number</p>
+                      <p className="font-medium font-mono text-stone-900">{selectedUser.serial_number || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-stone-500">Category</p>
+                      <Badge variant="outline" className={getCategoryColor(selectedUser.category)}>
+                        {selectedUser.category}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-stone-500">Role</p>
+                      <Badge variant="outline" className={selectedUser.user.role === "admin" ? "bg-purple-100 text-purple-700 border-purple-200" : "bg-stone-100 text-stone-700 border-stone-200"}>
+                        {selectedUser.user.role}
+                      </Badge>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-stone-500">Joined</p>
+                      <p className="font-medium text-stone-900">{new Date(selectedUser.user.created_at).toLocaleDateString('en-US', { dateStyle: 'long' })}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activity Summary */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-stone-900 border-b border-stone-200 pb-2">Activity Summary</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="border-stone-200 bg-gradient-to-br from-emerald-50 to-emerald-100/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <TrendingUp className="h-4 w-4 text-emerald-600" />
+                          <span className="text-xs text-stone-600">Income Activity</span>
+                        </div>
+                        <p className="text-lg font-bold text-emerald-700">Active</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-stone-200 bg-gradient-to-br from-red-50 to-red-100/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <TrendingDown className="h-4 w-4 text-red-600" />
+                          <span className="text-xs text-stone-600">Expense Records</span>
+                        </div>
+                        <p className="text-lg font-bold text-red-700">Active</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <p className="text-xs text-stone-500 mt-2">
+                    User transaction details are available in the respective income and expense reports.
+                  </p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )
 }
+

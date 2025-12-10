@@ -13,7 +13,7 @@ export interface User {
 export type TransactionType = "income" | "expense"
 export type PaymentStatus = "paid" | "unpaid" | "partial"
 export type MineralType = "gold" | "copper" | "cobalt" | "diamond" | "other"
-export type ExpenseCategory = "equipment" | "labor" | "chemicals" | "maintenance" | "transport" | "other"
+export type ExpenseCategory = "equipment" | "labor" | "chemicals" | "maintenance" | "transport" | "trips" | "other"
 
 export interface Income {
   id: string
@@ -75,6 +75,7 @@ export interface InventoryItem {
   id: string
   name: string
   type: "mineral" | "supply"
+  date?: Date // Production date - when the production actually occurred
   from?: ProductionFrom
   pitNumber?: string
   minerName?: string

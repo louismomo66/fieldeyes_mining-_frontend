@@ -73,11 +73,14 @@ interface ExpenseRequest {
 interface InventoryRequest {
   name: string
   type: string
+  date?: string
   from?: string
   pit_number?: string
   miner_name?: string
   batch_number?: string
   processing_method?: string
+  product?: string
+  gemstone_type?: string
   quantity: number
   unit: string
   min_stock_level: number
@@ -132,11 +135,11 @@ class ApiService {
 
     try {
       const response = await fetch(url, config)
-      
+
       // Get response text first to check content type
       const responseText = await response.text()
       const contentType = response.headers.get('content-type')
-      
+
       // Check if response is HTML (404 page) instead of JSON
       if (!contentType || !contentType.includes('application/json')) {
         // If we got HTML, it's likely a 404 from Next.js
@@ -163,7 +166,7 @@ class ApiService {
           }
         }
       }
-      
+
       // Response is JSON, parse it
       let data
       try {

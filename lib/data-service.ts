@@ -34,7 +34,7 @@ export class DataService {
         amount_paid: income.amountPaid,
         notes: income.notes,
       })
-      
+
       if (response.success && response.data) {
         return this.transformIncome(response.data)
       }
@@ -65,7 +65,7 @@ export class DataService {
         amount_due: income.amountDue,
         notes: income.notes,
       })
-      
+
       if (response.success && response.data) {
         return this.transformIncome(response.data)
       }
@@ -117,7 +117,7 @@ export class DataService {
         amount_paid: expense.amountPaid,
         notes: expense.notes,
       })
-      
+
       if (response.success && response.data) {
         return this.transformExpense(response.data)
       }
@@ -145,7 +145,7 @@ export class DataService {
         amount_paid: expense.amountPaid,
         notes: expense.notes,
       })
-      
+
       if (response.success && response.data) {
         return this.transformExpense(response.data)
       }
@@ -186,12 +186,15 @@ export class DataService {
 
   async createInventoryItem(item: Omit<InventoryItem, "id" | "createdAt" | "userId">): Promise<InventoryItem | null> {
     try {
+      // Format date as date string if available
+      const dateStr = item.date ? new Date(item.date).toISOString().split("T")[0] : undefined
       // Format lastUpdated as date string if available
       const lastUpdatedStr = item.lastUpdated ? new Date(item.lastUpdated).toISOString().split("T")[0] : undefined
-      
+
       const response = await apiService.createInventoryItem({
         name: item.name,
         type: item.type,
+        date: dateStr,
         from: item.from,
         pit_number: item.pitNumber,
         miner_name: item.minerName,
@@ -205,7 +208,7 @@ export class DataService {
         current_value: item.currentValue,
         last_updated: lastUpdatedStr,
       })
-      
+
       if (response.success && response.data) {
         return this.transformInventoryItem(response.data)
       }
@@ -222,13 +225,16 @@ export class DataService {
         console.error("Invalid inventory item ID for update:", id)
         return null
       }
-      
+
+      // Format date as date string if available
+      const dateStr = item.date ? new Date(item.date).toISOString().split("T")[0] : undefined
       // Format lastUpdated as date string if available
       const lastUpdatedStr = item.lastUpdated ? new Date(item.lastUpdated).toISOString().split("T")[0] : undefined
-      
+
       const response = await apiService.updateInventoryItem(parseInt(id), {
         name: item.name,
         type: item.type,
+        date: dateStr,
         from: item.from,
         pit_number: item.pitNumber,
         miner_name: item.minerName,
@@ -242,7 +248,7 @@ export class DataService {
         current_value: item.currentValue,
         last_updated: lastUpdatedStr,
       })
-      
+
       if (response.success && response.data) {
         return this.transformInventoryItem(response.data)
       }
@@ -346,7 +352,7 @@ export class DataService {
     } else if (data.ID !== undefined && data.ID !== null) {
       id = data.ID.toString()
     }
-    
+
     return {
       id,
       date: new Date(data.date),
@@ -378,7 +384,7 @@ export class DataService {
     } else if (data.ID !== undefined && data.ID !== null) {
       id = data.ID.toString()
     }
-    
+
     return {
       id,
       date: new Date(data.date),
@@ -408,11 +414,12 @@ export class DataService {
     } else if (data.ID !== undefined && data.ID !== null) {
       id = data.ID.toString()
     }
-    
+
     return {
       id,
       name: data.name,
       type: data.type,
+      date: data.date ? new Date(data.date) : undefined,
       from: data.from || undefined,
       pitNumber: data.pit_number || data.pitNumber || undefined,
       minerName: data.miner_name || data.minerName || undefined,
@@ -424,7 +431,6 @@ export class DataService {
       currentValue: data.current_value,
       lastUpdated: new Date(data.last_updated),
       userId: data.user_id ? data.user_id.toString() : '',
-      createdAt: new Date(data.created_at),
     }
   }
 
@@ -456,7 +462,7 @@ export class DataService {
         established_year: info.established_year,
         contact: info.contact,
       })
-      
+
       if (response.success && response.data) {
         return this.transformMineSiteInfo(response.data)
       }
