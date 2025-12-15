@@ -316,7 +316,7 @@ export default function DashboardPage() {
                     className="flex items-center justify-between border-b border-stone-200 pb-3 last:border-0"
                   >
                     <div>
-                      <p className="font-medium text-stone-900">{income.itemName || income.mineralType || "Mineral Sale"}</p>
+                      <p className="font-medium text-stone-900">{income.mineralType || "Mineral Sale"}</p>
                       <p className="text-sm text-stone-600">Pit {i + 1}</p>
                     </div>
                     <div className="text-right">

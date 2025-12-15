@@ -39,7 +39,7 @@ export function formatCurrencyForExport(amount: number): string {
 export function exportToCSV(data: string[][], filename: string) {
   // For CSV, we need to properly escape values and format numbers without commas
   // to avoid breaking CSV structure. Wrap values in quotes if they contain commas.
-  const csvRows = data.map(row => 
+  const csvRows = data.map(row =>
     row.map(cell => {
       // Remove any existing commas from numbers and format properly
       const numMatch = cell.match(/^[\d,]+\.?\d*$/)
@@ -58,7 +58,7 @@ export function exportToCSV(data: string[][], filename: string) {
       return cell
     })
   )
-  
+
   // Join rows with commas and escape properly
   const csvContent = csvRows.map(row => row.join(",")).join("\n")
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
@@ -75,7 +75,7 @@ export function exportToCSV(data: string[][], filename: string) {
 
 export function exportToPDF(headers: string[], rows: string[][], title: string, filename: string, serialNumber?: string) {
   // Load logo as base64 to ensure it displays in PDF
-  const loadLogoAsBase64 = (): Promise<string> => {
+  const loadLogoAsBase64 = (src: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image()
       img.crossOrigin = 'anonymous'
@@ -98,12 +98,12 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
       }
       img.onerror = () => resolve('')
       // Try to load from public folder
-      img.src = window.location.origin + '/logo.png'
+      img.src = window.location.origin + src
     })
   }
 
   // Format numeric values in rows with commas
-  const formattedRows = rows.map(row => 
+  const formattedRows = rows.map(row =>
     row.map(cell => {
       // Check if cell is a number (including currency strings)
       const numMatch = cell.match(/^[\d,]+\.?\d*$/)
@@ -118,13 +118,17 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
     })
   )
 
-  // Load logo and generate PDF
-  loadLogoAsBase64().then((logoBase64) => {
+  // Load logos and generate PDF
+  Promise.all([
+    loadLogoAsBase64('/logo.png'),
+    loadLogoAsBase64('/logo3.jpg')
+  ]).then(([logoBase64, logo3Base64]) => {
     const logoImg = logoBase64 ? `<img src="${logoBase64}" alt="Company Logo" class="logo" />` : ''
+    const logo3Img = logo3Base64 ? `<img src="${logo3Base64}" alt="Partner Logo" class="logo" style="margin-left: 10px; border-radius: 4px;" />` : ''
     const generatedDate = new Date().toLocaleString()
-    
-  // Create a printable HTML document
-  const htmlContent = `
+
+    // Create a printable HTML document
+    const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -200,8 +204,11 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
         </style>
       </head>
       <body>
-          <div class="header">
-            ${logoImg}
+          <div className="header">
+            <div style="display: flex; align-items: center; gap: 15px;">
+              ${logoImg}
+              ${logo3Img}
+            </div>
             <div class="header-info">
               <h1>${escapeHtml(title)}</h1>
               ${serialNumber ? `<div class="serial-number">Serial Number: ${escapeHtml(serialNumber)}</div>` : ""}
@@ -214,9 +221,9 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
             </tr>
           </thead>
           <tbody>
-              ${formattedRows.map(row => 
-              `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`
-            ).join("")}
+              ${formattedRows.map(row =>
+      `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`
+    ).join("")}
           </tbody>
         </table>
         <div class="footer">
@@ -249,29 +256,29 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
       </body>
     </html>
   `
-  
-  const blob = new Blob([htmlContent], { type: "text/html" })
-  const url = URL.createObjectURL(blob)
-  const printWindow = window.open(url, "_blank")
-  
-  if (printWindow) {
-    printWindow.onload = () => {
+
+    const blob = new Blob([htmlContent], { type: "text/html" })
+    const url = URL.createObjectURL(blob)
+    const printWindow = window.open(url, "_blank")
+
+    if (printWindow) {
+      printWindow.onload = () => {
         // Immediately set title to prevent blob URL from showing
         printWindow.document.title = title
         // Try to update history to remove blob URL
         try {
           printWindow.history.replaceState({}, title, window.location.origin)
-        } catch(e) {}
-        
-      setTimeout(() => {
-        printWindow.print()
-        // Clean up after printing
+        } catch (e) { }
+
         setTimeout(() => {
-          URL.revokeObjectURL(url)
-        }, 1000)
+          printWindow.print()
+          // Clean up after printing
+          setTimeout(() => {
+            URL.revokeObjectURL(url)
+          }, 1000)
         }, 500)
+      }
     }
-  }
   })
 }
 

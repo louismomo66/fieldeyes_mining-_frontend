@@ -42,14 +42,25 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-stone-50 to-emerald-50 p-4">
       <Card className="w-full max-w-md border-stone-200 shadow-xl">
         <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-16 h-16">
-            <Image
-              src="/logo.png"
-              alt="Mine Manager Logo"
-              width={64}
-              height={64}
-              className="w-full h-full object-contain"
-            />
+          <div className="mx-auto w-full flex items-center justify-center gap-4 mb-4">
+            <div className="w-16 h-16">
+              <Image
+                src="/logo.png"
+                alt="Mine Manager Logo"
+                width={64}
+                height={64}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="w-16 h-16">
+              <Image
+                src="/logo3.jpg"
+                alt="Partner Logo"
+                width={64}
+                height={64}
+                className="w-full h-full object-contain rounded-md"
+              />
+            </div>
           </div>
           <CardTitle className="text-3xl font-bold text-stone-900">Mine Manager</CardTitle>
           <CardDescription className="text-stone-600">Sign in to manage your mining operations</CardDescription>

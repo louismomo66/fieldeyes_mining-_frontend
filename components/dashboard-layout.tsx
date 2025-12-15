@@ -110,13 +110,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo */}
           <div className="flex h-16 items-center justify-between border-b border-stone-200 px-6">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10">
+              <div className="w-8 h-8">
                 <Image
                   src="/logo.png"
                   alt="Mine Manager Logo"
-                  width={40}
-                  height={40}
+                  width={32}
+                  height={32}
                   className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="w-8 h-8">
+                <Image
+                  src="/logo3.jpg"
+                  alt="Partner Logo"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-contain rounded-sm"
                 />
               </div>
               <h1 className="text-xl font-bold text-stone-900">
