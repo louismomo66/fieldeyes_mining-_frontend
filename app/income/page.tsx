@@ -20,7 +20,7 @@ import { Plus, DollarSign, Trash2, Edit } from "lucide-react"
 import { toast } from "sonner"
 import { dataService } from "@/lib/data-service"
 import type { Income, PaymentStatus } from "@/lib/types"
-import { cn } from "@/lib/utils"
+import { cn, formatWithCommas, parseCommas } from "@/lib/utils"
 
 const mineralCommodities = [
   "Gold", "Iron Ore", "Lead", "Zinc", "Lithium", "Nickel",
@@ -41,7 +41,7 @@ const gemstoneQualities = ["Rough", "Cut", "Polished", "Faceted", "Jewelry"]
 
 const productTypes = ["Mineral", "Supply", "Concentrates", "Tailings"]
 
-const units = ["grams (g)", "kilogram (kg)", "carats (ct)", "ounces (oz)", "tonnes"]
+const units = ["grams (g)", "kilogram (kg)", "carats (ct)", "ounces (oz)", "tonnes", "trips", "loads"]
 
 export default function SalesManagement() {
   const { user, isLoading } = useAuth()
@@ -93,16 +93,16 @@ export default function SalesManagement() {
     }
 
     loadSales()
-    
+
     // Refresh data when page becomes visible (user returns from another page)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && user) {
         loadSales()
       }
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
@@ -112,7 +112,7 @@ export default function SalesManagement() {
   useEffect(() => {
     if (formData.quantity && formData.pricePerUnit) {
       const quantity = parseFloat(formData.quantity)
-      const price = parseFloat(formData.pricePerUnit)
+      const price = parseFloat(parseCommas(formData.pricePerUnit))
       if (!isNaN(quantity) && !isNaN(price)) {
         const total = quantity * price
         setFormData(prev => ({ ...prev, totalAmount: total.toFixed(2) }))
@@ -128,8 +128,8 @@ export default function SalesManagement() {
       return
     }
 
-    const total = parseFloat(formData.totalAmount || "0")
-    const paid = parseFloat(formData.amountPaid || "0")
+    const total = parseFloat(parseCommas(formData.totalAmount || "0"))
+    const paid = parseFloat(parseCommas(formData.amountPaid || "0"))
     if (total > 0) {
       if (paid >= total) {
         setFormData(prev => ({ ...prev, paymentStatus: "paid" }))
@@ -156,7 +156,7 @@ export default function SalesManagement() {
     let commodityName = sale.mineralType.charAt(0).toUpperCase() + sale.mineralType.slice(1)
     if (commodityName === "Iron_ore") commodityName = "Iron Ore"
     else if (commodityName === "Rare_earth_elements") commodityName = "Rare Earth Elements"
-    
+
     // Format unit for display (e.g., "kg" -> "kilogram (kg)")
     let unitDisplay = sale.unit
     if (sale.unit === "kg") unitDisplay = "kilogram (kg)"
@@ -164,6 +164,8 @@ export default function SalesManagement() {
     else if (sale.unit === "ct") unitDisplay = "carats (ct)"
     else if (sale.unit === "oz") unitDisplay = "ounces (oz)"
     else if (sale.unit === "tonnes") unitDisplay = "tonnes"
+    else if (sale.unit === "trips") unitDisplay = "trips"
+    else if (sale.unit === "loads") unitDisplay = "loads"
 
     setFormData({
       date: new Date(sale.date).toISOString().split("T")[0],
@@ -173,12 +175,12 @@ export default function SalesManagement() {
       type: "Mineral",
       quantity: sale.quantity.toString(),
       unit: unitDisplay,
-      pricePerUnit: sale.pricePerUnit.toString(),
-      totalAmount: sale.totalAmount.toString(),
+      pricePerUnit: formatWithCommas(sale.pricePerUnit),
+      totalAmount: formatWithCommas(sale.totalAmount),
       buyerName: sale.customerName,
       contact: sale.customerContact || "",
       paymentStatus: sale.paymentStatus,
-      amountPaid: sale.amountPaid.toString(),
+      amountPaid: formatWithCommas(sale.amountPaid),
     })
     setSelectedMineral(commodityName)
     setSelectedType("Mineral")
@@ -198,7 +200,7 @@ export default function SalesManagement() {
       else if (selectedMineral === "Copper") mineralType = "copper"
       else if (selectedMineral === "Cobalt") mineralType = "cobalt"
       else if (selectedMineral === "Diamond") mineralType = "diamond"
-      
+
       // Map sales type
       let salesType = "mineral"
       if (selectedType === "Supply") salesType = "supply"
@@ -207,12 +209,12 @@ export default function SalesManagement() {
 
       // Extract unit value (e.g., "kilogram (kg)" -> "kg")
       const unitValue = formData.unit.split("(")[1]?.replace(")", "").trim() || formData.unit || "kg"
-      
+
       // Calculate payment details
-      const totalAmount = parseFloat(formData.totalAmount || "0")
-      const amountPaid = parseFloat(formData.amountPaid || "0")
+      const totalAmount = parseFloat(parseCommas(formData.totalAmount || "0"))
+      const amountPaid = parseFloat(parseCommas(formData.amountPaid || "0"))
       const amountDue = totalAmount - amountPaid
-      
+
       // Use the selected payment status (user can override auto-calculation)
       let paymentStatus: "paid" | "unpaid" | "partial" = formData.paymentStatus
 
@@ -226,13 +228,13 @@ export default function SalesManagement() {
           paymentStatus = "unpaid"
         }
       }
- 
+
       const incomeData: Partial<Income> = {
         date: new Date(formData.date),
         mineralType: mineralType as any,
         quantity: parseFloat(formData.quantity),
         unit: unitValue,
-        pricePerUnit: parseFloat(formData.pricePerUnit),
+        pricePerUnit: parseFloat(parseCommas(formData.pricePerUnit)),
         totalAmount,
         customerName: formData.buyerName,
         customerContact: formData.contact || "",
@@ -253,21 +255,21 @@ export default function SalesManagement() {
           setSales(refreshedSales)
           setIsManualStatusChange(false)
           toast.success(`Sale record updated successfully! Status: ${updatedIncome.paymentStatus}, Amount Paid: ${formatCurrency(updatedIncome.amountPaid)}`)
-          
+
           // Dispatch custom event to notify other components (Dashboard, Analytics, Reports)
-          window.dispatchEvent(new CustomEvent('salesUpdated', { 
-            detail: { 
+          window.dispatchEvent(new CustomEvent('salesUpdated', {
+            detail: {
               saleId: editingSale.id,
               paymentStatus: updatedIncome.paymentStatus,
               amountPaid: updatedIncome.amountPaid,
               amountDue: updatedIncome.amountDue
-            } 
+            }
           }))
         } else {
           console.error("Failed to update sale - no response from backend")
           toast.error("Failed to update sale record. Please try again.")
         }
-    } else {
+      } else {
         // Create new sale
         const newIncome = await dataService.createIncome(incomeData as Omit<Income, "id" | "createdAt">)
         if (newIncome) {
@@ -275,7 +277,7 @@ export default function SalesManagement() {
           toast.success("Sale record added successfully!")
         }
       }
-      
+
       setShowForm(false)
       setEditingSale(null)
       setIsManualStatusChange(false)
@@ -354,7 +356,7 @@ export default function SalesManagement() {
         {/* Header with Instructions */}
         <div className="rounded-lg border-l-4 border-emerald-600 bg-emerald-50/50 p-4">
           <div className="flex items-start justify-between">
-          <div>
+            <div>
               <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-2">
                 <DollarSign className="h-8 w-8 text-emerald-700" />
                 Sales
@@ -366,9 +368,9 @@ export default function SalesManagement() {
                 💡 Click "Add Sale" button to record a new transaction with buyer details and pricing
               </p>
             </div>
-            <Button 
-              onClick={() => setShowForm(!showForm)} 
-              className="gap-2 shadow-md bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white" 
+            <Button
+              onClick={() => setShowForm(!showForm)}
+              className="gap-2 shadow-md bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white"
               size="lg"
             >
               <Plus className="h-5 w-5" />
@@ -387,26 +389,26 @@ export default function SalesManagement() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="date">Date</Label>
-                    <Input 
-                      id="date" 
-                      type="date" 
+                    <Input
+                      id="date"
+                      type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      required 
+                      required
                       className="border-stone-300"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="mineral">Mineral Commodity</Label>
-                    <Select 
-                      value={selectedMineral} 
+                    <Select
+                      value={selectedMineral}
                       onValueChange={(value) => {
                         setSelectedMineral(value)
                         setFormData({ ...formData, mineral: value })
                         setSelectedGemstone("") // Reset gemstone when mineral changes
                         setSelectedGemstoneQuality("") // Reset gemstone quality when mineral changes
-                      }} 
+                      }}
                       required
                     >
                       <SelectTrigger className="border-stone-300">
@@ -426,7 +428,7 @@ export default function SalesManagement() {
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="gemstone">Gemstone Type</Label>
-                        <Select 
+                        <Select
                           value={selectedGemstone}
                           onValueChange={(value) => {
                             setSelectedGemstone(value)
@@ -449,7 +451,7 @@ export default function SalesManagement() {
 
                       <div className="space-y-2">
                         <Label htmlFor="gemstoneQuality">Quality/Processing</Label>
-                        <Select 
+                        <Select
                           value={selectedGemstoneQuality}
                           onValueChange={(value) => {
                             setSelectedGemstoneQuality(value)
@@ -475,12 +477,12 @@ export default function SalesManagement() {
                   {selectedMineral !== "Gemstones" && (
                     <div className="space-y-2">
                       <Label htmlFor="type">Type</Label>
-                      <Select 
-                        value={selectedType} 
+                      <Select
+                        value={selectedType}
                         onValueChange={(value) => {
                           setSelectedType(value)
                           setFormData({ ...formData, type: value })
-                        }} 
+                        }}
                         required
                       >
                         <SelectTrigger className="border-stone-300">
@@ -499,20 +501,20 @@ export default function SalesManagement() {
 
                   <div className="space-y-2">
                     <Label htmlFor="quantity">Quantity</Label>
-                    <Input 
-                      id="quantity" 
-                      type="number" 
-                      step="0.01" 
+                    <Input
+                      id="quantity"
+                      type="number"
+                      step="0.01"
                       value={formData.quantity}
                       onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                      required 
+                      required
                       className="border-stone-300"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="unit">Unit of Measurement</Label>
-                    <Select 
+                    <Select
                       value={formData.unit}
                       onValueChange={(value) => setFormData({ ...formData, unit: value })}
                       required
@@ -532,57 +534,55 @@ export default function SalesManagement() {
 
                   <div className="space-y-2">
                     <Label htmlFor="price">Price per Unit (UGX)</Label>
-                    <Input 
-                      id="price" 
-                      type="number" 
-                      step="0.01" 
+                    <Input
+                      id="price"
+                      type="text"
                       value={formData.pricePerUnit}
-                      onChange={(e) => setFormData({ ...formData, pricePerUnit: e.target.value })}
-                      required 
+                      onChange={(e) => setFormData({ ...formData, pricePerUnit: formatWithCommas(e.target.value) })}
+                      required
                       className="border-stone-300"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="total">Total Amount (UGX)</Label>
-                    <Input 
-                      id="total" 
-                      type="number" 
-                      step="0.01" 
-                      value={formData.totalAmount}
-                      onChange={(e) => setFormData({ ...formData, totalAmount: e.target.value })}
-                      required 
+                    <Input
+                      id="total"
+                      type="text"
+                      value={formatWithCommas(formData.totalAmount)}
+                      required
                       readOnly
                       className="bg-stone-50 border-stone-300"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="buyer">Buyer Name</Label>
-                    <Input 
-                      id="buyer" 
-                      type="text" 
+                    <Label htmlFor="buyer">Buyer Name (Optional)</Label>
+                    <Input
+                      id="buyer"
+                      type="text"
                       value={formData.buyerName}
                       onChange={(e) => setFormData({ ...formData, buyerName: e.target.value })}
-                      required 
+                      placeholder="Enter buyer name"
                       className="border-stone-300"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="contact">Contact Information</Label>
-                    <Input 
-                      id="contact" 
-                      type="text" 
+                    <Label htmlFor="contact">Contact Information (Optional)</Label>
+                    <Input
+                      id="contact"
+                      type="text"
                       value={formData.contact}
                       onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                      placeholder="+260 XXX XXX XXX"
                       className="border-stone-300"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="paymentStatus">Payment Status</Label>
-                    <Select 
+                    <Select
                       value={formData.paymentStatus}
                       onValueChange={(value: "paid" | "unpaid" | "partial") => {
                         setIsManualStatusChange(true)
@@ -606,13 +606,12 @@ export default function SalesManagement() {
 
                   <div className="space-y-2">
                     <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
-                    <Input 
-                      id="amountPaid" 
-                      type="number" 
-                      step="0.01" 
+                    <Input
+                      id="amountPaid"
+                      type="text"
                       value={formData.amountPaid}
                       onChange={(e) => {
-                        const paid = e.target.value
+                        const paid = formatWithCommas(e.target.value)
                         setIsManualStatusChange(false)
                         setFormData({ ...formData, amountPaid: paid })
                       }}
@@ -620,16 +619,16 @@ export default function SalesManagement() {
                     />
                     {formData.totalAmount && (
                       <p className="text-xs text-stone-500">
-                        Amount Due: {formatCurrency(Math.max(0, parseFloat(formData.totalAmount || "0") - parseFloat(formData.amountPaid || "0")))}
+                        Amount Due: {formatCurrency(Math.max(0, parseFloat(parseCommas(formData.totalAmount || "0")) - parseFloat(parseCommas(formData.amountPaid || "0"))))}
                       </p>
                     )}
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => {
                       setShowForm(false)
                       setEditingSale(null)
@@ -658,7 +657,7 @@ export default function SalesManagement() {
                   >
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
                     className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white"
                   >
@@ -714,7 +713,7 @@ export default function SalesManagement() {
                                 <span className="font-medium text-stone-900">
                                   {sale.mineralType.charAt(0).toUpperCase() + sale.mineralType.slice(1).replace(/_/g, ' ')}
                                 </span>
-                      </div>
+                              </div>
                             </td>
                             <td className="p-3 text-stone-700">
                               {sale.quantity.toLocaleString()} {sale.unit}
@@ -735,7 +734,7 @@ export default function SalesManagement() {
                             </td>
                             <td className="p-3 text-stone-700">{sale.customerName}</td>
                             <td className="p-3">
-                      <div className="flex gap-2">
+                              <div className="flex gap-2">
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -743,23 +742,23 @@ export default function SalesManagement() {
                                   onClick={() => handleEdit(sale)}
                                 >
                                   <Edit className="h-4 w-4 text-amber-600" />
-                            </Button>
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
                                   onClick={() => handleDelete(sale.id)}
                                 >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
-                ))
-              )}
+                        ))
+                    )}
                   </tbody>
                 </table>
-            </div>
+              </div>
             )}
           </CardContent>
         </Card>

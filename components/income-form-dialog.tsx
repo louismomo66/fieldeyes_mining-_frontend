@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { Plus } from "lucide-react"
 import type { Income, MineralType, PaymentStatus, GemstoneType, SalesType } from "@/lib/types"
+import { formatWithCommas, parseCommas } from "@/lib/utils"
 
 // Currency updated to UGX
 
@@ -33,11 +34,11 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
     salesType: income?.salesType || ("mineral" as SalesType),
     quantity: income?.quantity?.toString() || "",
     unit: income?.unit || "kg",
-    pricePerUnit: income?.pricePerUnit?.toString() || "",
+    pricePerUnit: income?.pricePerUnit ? formatWithCommas(income.pricePerUnit) : "",
     customerName: income?.customerName || "",
     customerContact: income?.customerContact || "",
     paymentStatus: income?.paymentStatus || ("unpaid" as PaymentStatus),
-    amountPaid: income?.amountPaid?.toString() || "0",
+    amountPaid: income?.amountPaid ? formatWithCommas(income.amountPaid) : "0",
     notes: income?.notes || "",
   })
 
@@ -45,9 +46,9 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
     e.preventDefault()
 
     const quantity = Number.parseFloat(formData.quantity)
-    const pricePerUnit = Number.parseFloat(formData.pricePerUnit)
+    const pricePerUnit = Number.parseFloat(parseCommas(formData.pricePerUnit))
     const totalAmount = quantity * pricePerUnit
-    const amountPaid = Number.parseFloat(formData.amountPaid)
+    const amountPaid = Number.parseFloat(parseCommas(formData.amountPaid))
     const amountDue = totalAmount - amountPaid
 
     const incomeData: Partial<Income> = {
@@ -238,6 +239,8 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
                   <SelectItem value="ct">Carats (ct)</SelectItem>
                   <SelectItem value="oz">Ounces (oz)</SelectItem>
                   <SelectItem value="tonnes">Tonnes</SelectItem>
+                  <SelectItem value="trips">Trips</SelectItem>
+                  <SelectItem value="loads">Loads</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -246,10 +249,9 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
               <Label htmlFor="pricePerUnit">Price per Unit (UGX)</Label>
               <Input
                 id="pricePerUnit"
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.pricePerUnit}
-                onChange={(e) => setFormData({ ...formData, pricePerUnit: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, pricePerUnit: formatWithCommas(e.target.value) })}
                 required
               />
             </div>
@@ -259,7 +261,7 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
               <Input
                 value={
                   formData.quantity && formData.pricePerUnit
-                    ? `UGX ${(Number.parseFloat(formData.quantity) * Number.parseFloat(formData.pricePerUnit)).toLocaleString()}`
+                    ? `UGX ${formatWithCommas(Number.parseFloat(formData.quantity) * Number.parseFloat(parseCommas(formData.pricePerUnit)))}`
                     : "UGX 0"
                 }
                 disabled
@@ -268,23 +270,22 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="customerName">Customer Name</Label>
+              <Label htmlFor="customerName">Customer Name (Optional)</Label>
               <Input
                 id="customerName"
                 value={formData.customerName}
                 onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                required
+                placeholder="Enter customer name"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="customerContact">Customer Contact</Label>
+              <Label htmlFor="customerContact">Customer Contact (Optional)</Label>
               <Input
                 id="customerContact"
                 value={formData.customerContact}
                 onChange={(e) => setFormData({ ...formData, customerContact: e.target.value })}
-                placeholder="+260 XXX XXX XXX"
-                required
+                placeholder="+250 XXX XXX XXX"
               />
             </div>
 
@@ -309,10 +310,9 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
               <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
               <Input
                 id="amountPaid"
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.amountPaid}
-                onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, amountPaid: formatWithCommas(e.target.value) })}
                 required
               />
             </div>

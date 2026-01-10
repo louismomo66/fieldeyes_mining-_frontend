@@ -428,6 +428,8 @@ export default function ProductionManagement() {
                         <SelectItem value="cut">Cut</SelectItem>
                         <SelectItem value="polished">Polished</SelectItem>
                         <SelectItem value="faceted">Faceted</SelectItem>
+                        <SelectItem value="aggregates">Aggregates</SelectItem>
+                        <SelectItem value="stone_dust">Stone Dust</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -503,6 +505,7 @@ export default function ProductionManagement() {
                         <SelectItem value="g">Grams (g)</SelectItem>
                         <SelectItem value="oz">Ounces (oz)</SelectItem>
                         <SelectItem value="ct">Carats (ct)</SelectItem>
+                        <SelectItem value="trips">Trips</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

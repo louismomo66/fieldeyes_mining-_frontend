@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { Plus } from "lucide-react"
 import type { Expense, ExpenseCategory, PaymentStatus } from "@/lib/types"
+import { formatWithCommas, parseCommas } from "@/lib/utils"
 
 interface ExpenseFormDialogProps {
   expense?: Expense
@@ -27,19 +28,19 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
     date: expense?.date ? new Date(expense.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
     category: expense?.category || ("labor" as ExpenseCategory),
     description: expense?.description || "",
-    amount: expense?.amount?.toString() || "",
+    amount: expense?.amount ? formatWithCommas(expense.amount) : "",
     supplierName: expense?.supplierName || "",
     supplierContact: expense?.supplierContact || "",
     paymentStatus: expense?.paymentStatus || ("unpaid" as PaymentStatus),
-    amountPaid: expense?.amountPaid?.toString() || "0",
+    amountPaid: expense?.amountPaid ? formatWithCommas(expense.amountPaid) : "0",
     notes: expense?.notes || "",
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const amount = Number.parseFloat(formData.amount)
-    const amountPaid = Number.parseFloat(formData.amountPaid)
+    const amount = Number.parseFloat(parseCommas(formData.amount))
+    const amountPaid = Number.parseFloat(parseCommas(formData.amountPaid))
     const amountDue = amount - amountPaid
 
     const expenseData: Partial<Expense> = {
@@ -130,10 +131,9 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
               <Label htmlFor="amount">Amount (UGX)</Label>
               <Input
                 id="amount"
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, amount: formatWithCommas(e.target.value) })}
                 required
               />
             </div>
@@ -179,10 +179,9 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
               <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
               <Input
                 id="amountPaid"
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.amountPaid}
-                onChange={(e) => setFormData({ ...formData, amountPaid: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, amountPaid: formatWithCommas(e.target.value) })}
                 required
               />
             </div>

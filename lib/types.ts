@@ -12,7 +12,13 @@ export interface User {
 // Transaction Types
 export type TransactionType = "income" | "expense"
 export type PaymentStatus = "paid" | "unpaid" | "partial"
-export type MineralType = "gold" | "copper" | "cobalt" | "diamond" | "other"
+export type MineralType =
+  | "gold" | "copper" | "cobalt" | "diamond" | "iron_ore" | "lead" | "zinc"
+  | "lithium" | "nickel" | "coltan" | "tin" | "wolfram" | "titanium"
+  | "manganese" | "rare_earth_elements" | "uranium" | "bentonite" | "diatomite"
+  | "graphite" | "gypsum" | "feldspar" | "limestone" | "marble" | "kaolin"
+  | "phosphates" | "pozzolana" | "salt" | "sand" | "vermiculite" | "silver"
+  | "granite" | "chromite" | "gemstones" | "other"
 export type ExpenseCategory = "equipment" | "labor" | "chemicals" | "maintenance" | "transport" | "trips" | "other"
 
 export interface Income {
@@ -62,7 +68,7 @@ export type ProcessingMethod =
   | "dressing" | "leaching" | "elution" | "refining" | "floatation" | "grinding"
   | "screening" | "drying" | "exfoliation" | "polishing" | "washing"
 
-export type ProductType = "ore" | "concentrate" | "metal" | "rough" | "cut" | "polished" | "faceted" | "other"
+export type ProductType = "ore" | "concentrate" | "metal" | "rough" | "cut" | "polished" | "faceted" | "aggregates" | "stone_dust" | "other"
 
 export type GemstoneType =
   | "apatite" | "diamond" | "flourite" | "ruby" | "emerald" | "sapphire"
