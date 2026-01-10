@@ -1,5 +1,6 @@
 // Data service for managing application data with API calls
 import { apiService } from "./api"
+import { offlineService } from "./offline-service"
 import type { Income, Expense, InventoryItem, FinancialSummary, MonthlyData, CategoryBreakdown, MineSiteInfo } from "./types"
 
 export class DataService {
@@ -21,27 +22,44 @@ export class DataService {
   }
 
   async createIncome(income: Omit<Income, "id" | "createdAt">): Promise<Income | null> {
+    const incomeRequest = {
+      date: income.date.toISOString().split('T')[0],
+      mineral_type: income.mineralType,
+      quantity: income.quantity,
+      unit: income.unit,
+      price_per_unit: income.pricePerUnit,
+      customer_name: income.customerName,
+      customer_contact: income.customerContact,
+      payment_status: income.paymentStatus,
+      amount_paid: income.amountPaid,
+      notes: income.notes,
+    }
+
     try {
-      const response = await apiService.createIncome({
-        date: income.date.toISOString().split('T')[0],
-        mineral_type: income.mineralType,
-        quantity: income.quantity,
-        unit: income.unit,
-        price_per_unit: income.pricePerUnit,
-        customer_name: income.customerName,
-        customer_contact: income.customerContact,
-        payment_status: income.paymentStatus,
-        amount_paid: income.amountPaid,
-        notes: income.notes,
-      })
+      // Check if online
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        await offlineService.saveOffline("income", incomeRequest)
+        console.log("Income saved offline")
+        return { ...income, id: 'offline-' + Date.now(), createdAt: new Date(), userId: 'offline' } as Income
+      }
+
+      const response = await apiService.createIncome(incomeRequest)
 
       if (response.success && response.data) {
         return this.transformIncome(response.data)
       }
       return null
-    } catch (error) {
-      console.error("Error creating income:", error)
-      return null
+    } catch (error: any) {
+      if (error.message?.includes("Offline limit reached")) {
+        throw error
+      }
+      console.error("Error creating income, attempting offline save:", error)
+      try {
+        await offlineService.saveOffline("income", incomeRequest)
+        return { ...income, id: 'offline-' + Date.now(), createdAt: new Date(), userId: 'offline' } as Income
+      } catch (offlineError) {
+        throw offlineError
+      }
     }
   }
 
@@ -105,26 +123,42 @@ export class DataService {
   }
 
   async createExpense(expense: Omit<Expense, "id" | "createdAt">): Promise<Expense | null> {
+    const expenseRequest = {
+      date: expense.date.toISOString().split('T')[0],
+      category: expense.category,
+      description: expense.description,
+      amount: expense.amount,
+      supplier_name: expense.supplierName,
+      supplier_contact: expense.supplierContact,
+      payment_status: expense.paymentStatus,
+      amount_paid: expense.amountPaid,
+      notes: expense.notes,
+    }
+
     try {
-      const response = await apiService.createExpense({
-        date: expense.date.toISOString().split('T')[0],
-        category: expense.category,
-        description: expense.description,
-        amount: expense.amount,
-        supplier_name: expense.supplierName,
-        supplier_contact: expense.supplierContact,
-        payment_status: expense.paymentStatus,
-        amount_paid: expense.amountPaid,
-        notes: expense.notes,
-      })
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        await offlineService.saveOffline("expense", expenseRequest)
+        console.log("Expense saved offline")
+        return { ...expense, id: 'offline-' + Date.now(), createdAt: new Date(), userId: 'offline' } as Expense
+      }
+
+      const response = await apiService.createExpense(expenseRequest)
 
       if (response.success && response.data) {
         return this.transformExpense(response.data)
       }
       return null
-    } catch (error) {
-      console.error("Error creating expense:", error)
-      return null
+    } catch (error: any) {
+      if (error.message?.includes("Offline limit reached")) {
+        throw error
+      }
+      console.error("Error creating expense, attempting offline save:", error)
+      try {
+        await offlineService.saveOffline("expense", expenseRequest)
+        return { ...expense, id: 'offline-' + Date.now(), createdAt: new Date(), userId: 'offline' } as Expense
+      } catch (offlineError) {
+        throw offlineError
+      }
     }
   }
 
@@ -185,37 +219,53 @@ export class DataService {
   }
 
   async createInventoryItem(item: Omit<InventoryItem, "id" | "createdAt" | "userId">): Promise<InventoryItem | null> {
-    try {
-      // Format date as date string if available
-      const dateStr = item.date ? new Date(item.date).toISOString().split("T")[0] : undefined
-      // Format lastUpdated as date string if available
-      const lastUpdatedStr = item.lastUpdated ? new Date(item.lastUpdated).toISOString().split("T")[0] : undefined
+    // Format date as date string if available
+    const dateStr = item.date ? new Date(item.date).toISOString().split("T")[0] : undefined
+    // Format lastUpdated as date string if available
+    const lastUpdatedStr = item.lastUpdated ? new Date(item.lastUpdated).toISOString().split("T")[0] : undefined
 
-      const response = await apiService.createInventoryItem({
-        name: item.name,
-        type: item.type,
-        date: dateStr,
-        from: item.from,
-        pit_number: item.pitNumber,
-        miner_name: item.minerName,
-        batch_number: item.batchNumber,
-        processing_method: item.processingMethod,
-        product: item.product,
-        gemstone_type: item.gemstoneType,
-        quantity: item.quantity,
-        unit: item.unit,
-        min_stock_level: item.minStockLevel,
-        current_value: item.currentValue,
-        last_updated: lastUpdatedStr,
-      })
+    const itemRequest = {
+      name: item.name,
+      type: item.type,
+      date: dateStr,
+      from: item.from,
+      pit_number: item.pitNumber,
+      miner_name: item.minerName,
+      batch_number: item.batchNumber,
+      processing_method: item.processingMethod,
+      product: item.product,
+      gemstone_type: item.gemstoneType,
+      quantity: item.quantity,
+      unit: item.unit,
+      min_stock_level: item.minStockLevel,
+      current_value: item.currentValue,
+      last_updated: lastUpdatedStr,
+    }
+
+    try {
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        await offlineService.saveOffline("inventory", itemRequest)
+        console.log("Inventory item saved offline")
+        return { ...item, id: 'offline-' + Date.now(), createdAt: new Date(), lastUpdated: new Date(), userId: 'offline' } as InventoryItem
+      }
+
+      const response = await apiService.createInventoryItem(itemRequest)
 
       if (response.success && response.data) {
         return this.transformInventoryItem(response.data)
       }
       return null
-    } catch (error) {
-      console.error("Error creating inventory item:", error)
-      return null
+    } catch (error: any) {
+      if (error.message?.includes("Offline limit reached")) {
+        throw error
+      }
+      console.error("Error creating inventory item, attempting offline save:", error)
+      try {
+        await offlineService.saveOffline("inventory", itemRequest)
+        return { ...item, id: 'offline-' + Date.now(), createdAt: new Date(), lastUpdated: new Date(), userId: 'offline' } as InventoryItem
+      } catch (offlineError) {
+        throw offlineError
+      }
     }
   }
 

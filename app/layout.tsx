@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   },
 }
 
+import { SyncIndicator } from "@/components/sync-indicator"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,6 +32,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
+          <SyncIndicator />
         </AuthProvider>
         <Analytics />
       </body>
