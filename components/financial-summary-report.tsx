@@ -149,7 +149,7 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
                   <SelectItem value="pdf">PDF</SelectItem>
                 </SelectContent>
               </Select>
-              <Button 
+              <Button
                 onClick={handleExport}
                 className="gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white"
               >
@@ -268,10 +268,9 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
                 <div className="flex justify-between">
                   <span className="text-stone-600">Collection Rate:</span>
                   <span className="font-semibold text-stone-900">
-                    {summary.totalIncome > 0 
+                    {summary.totalIncome > 0
                       ? (((summary.totalIncome - summary.totalReceivables) / summary.totalIncome) * 100).toFixed(1)
                       : 0}%
-                    }
                   </span>
                 </div>
               </CardContent>
@@ -296,7 +295,6 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
                     {summary.totalExpenses > 0
                       ? (((summary.totalExpenses - summary.totalPayables) / summary.totalExpenses) * 100).toFixed(1)
                       : 0}%
-                    }
                   </span>
                 </div>
               </CardContent>
