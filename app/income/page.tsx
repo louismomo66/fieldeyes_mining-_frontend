@@ -41,7 +41,7 @@ const gemstoneQualities = ["Rough", "Cut", "Polished", "Faceted", "Jewelry"]
 
 const productTypes = ["Mineral", "Supply", "Concentrates", "Tailings"]
 
-const units = ["grams (g)", "kilogram (kg)", "carats (ct)", "ounces (oz)", "tonnes", "trips", "loads"]
+const units = ["grams (g)", "kilogram (kg)", "carats (ct)", "ounces (oz)", "tonnes", "trips", "loads", "sacks"]
 
 export default function SalesManagement() {
   const { user, isLoading } = useAuth()
@@ -115,7 +115,14 @@ export default function SalesManagement() {
       const price = parseFloat(parseCommas(formData.pricePerUnit))
       if (!isNaN(quantity) && !isNaN(price)) {
         const total = quantity * price
-        setFormData(prev => ({ ...prev, totalAmount: total.toFixed(2) }))
+        const totalStr = total.toFixed(2)
+        setFormData(prev => ({
+          ...prev,
+          totalAmount: totalStr,
+          // Only auto-fill amount paid if we're not editing (optional, but usually desired for new sales)
+          // or if the user hasn't explicitly overridden it yet. 
+          amountPaid: prev.amountPaid === "" || prev.amountPaid === "0" ? formatWithCommas(totalStr) : prev.amountPaid
+        }))
       }
     }
   }, [formData.quantity, formData.pricePerUnit])

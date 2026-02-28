@@ -241,6 +241,7 @@ export function InventoryFormDialog({ item, onSave, trigger }: InventoryFormDial
                   <SelectItem value="ct">Carats (ct)</SelectItem>
                   <SelectItem value="oz">Ounces (oz)</SelectItem>
                   <SelectItem value="tonnes">Tonnes</SelectItem>
+                  <SelectItem value="sacks">Sacks</SelectItem>
                 </SelectContent>
               </Select>
             </div>

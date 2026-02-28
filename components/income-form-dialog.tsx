@@ -241,6 +241,7 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
                   <SelectItem value="tonnes">Tonnes</SelectItem>
                   <SelectItem value="trips">Trips</SelectItem>
                   <SelectItem value="loads">Loads</SelectItem>
+                  <SelectItem value="sacks">Sacks</SelectItem>
                 </SelectContent>
               </Select>
             </div>
