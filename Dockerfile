@@ -1,7 +1,7 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable && pnpm install
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -14,7 +14,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
-COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --prod --frozen-lockfile
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable && pnpm install --prod
 EXPOSE 3000
 CMD ["pnpm","start"]
