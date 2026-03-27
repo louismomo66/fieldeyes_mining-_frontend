@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 }
 
 import { SyncIndicator } from "@/components/sync-indicator"
+import { CurrencyProvider } from "@/lib/currency-context"
 
 export default function RootLayout({
   children,
@@ -30,9 +31,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased`}>
         <AuthProvider>
-          {children}
-          <Toaster />
-          <SyncIndicator />
+          <CurrencyProvider>
+            {children}
+            <Toaster />
+            <SyncIndicator />
+          </CurrencyProvider>
         </AuthProvider>
         <Analytics />
       </body>

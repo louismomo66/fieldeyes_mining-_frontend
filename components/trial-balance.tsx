@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
+import { useCurrency } from "@/lib/currency-context"
 import { exportToCSV, exportToPDF, generateUserSerialNumber } from "@/lib/export-utils"
 
 interface TrialBalanceProps {
@@ -15,6 +16,7 @@ interface TrialBalanceProps {
 
 export function TrialBalance({ selectedYear }: TrialBalanceProps) {
   const { toast } = useToast()
+  const { currency, formatCurrency } = useCurrency()
   const [loading, setLoading] = useState(true)
   const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [accounts, setAccounts] = useState<Array<{ name: string; debit: number; credit: number }>>([])
@@ -81,7 +83,7 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
           const expenseCategories: Array<{ label: string; filter: (exp: typeof yearExpenses[number]) => boolean }> = [
             { label: "Labor Costs", filter: exp => exp.category === "labor" },
             { label: "Equipment & Maintenance", filter: exp => exp.category === "equipment" || exp.category === "maintenance" },
-            { label: "Chemicals & Supplies", filter: exp => exp.category === "chemicals" || exp.category === "supply" },
+            { label: "Chemicals & Supplies", filter: exp => exp.category === "chemicals" },
             { label: "Transport Costs", filter: exp => exp.category === "transport" },
             { label: "Other Expenses", filter: exp => exp.category === "other" },
           ]
@@ -140,16 +142,8 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
   const totalDebit = accounts.reduce((sum, acc) => sum + acc.debit, 0)
   const totalCredit = accounts.reduce((sum, acc) => sum + acc.credit, 0)
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
   const handleExport = async () => {
-    const headers = ["Account Name", "Debit (UGX)", "Credit (UGX)"]
+    const headers = ["Account Name", `Debit (${currency})`, `Credit (${currency})`]
     const rows = [
       ...accounts.map(acc => [acc.name, acc.debit.toFixed(2), acc.credit.toFixed(2)]),
       ["Total", totalDebit.toFixed(2), totalCredit.toFixed(2)]
@@ -221,8 +215,8 @@ export function TrialBalance({ selectedYear }: TrialBalanceProps) {
               <thead>
                 <tr className="border-b border-stone-200 bg-stone-50">
                   <th className="p-3 text-left font-medium text-stone-900">Account Name</th>
-                  <th className="p-3 text-right font-medium text-stone-900">Debit (UGX)</th>
-                  <th className="p-3 text-right font-medium text-stone-900">Credit (UGX)</th>
+                  <th className="p-3 text-right font-medium text-stone-900">Debit ({currency})</th>
+                  <th className="p-3 text-right font-medium text-stone-900">Credit ({currency})</th>
                 </tr>
               </thead>
               <tbody>

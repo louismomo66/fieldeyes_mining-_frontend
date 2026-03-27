@@ -3,17 +3,23 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useCurrency } from "@/lib/currency-context"
+import { cn } from "@/lib/utils"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Shield, AlertCircle, User, Mail, Calendar, Key, MapPin } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Shield, AlertCircle, User, Mail, Calendar, Key, MapPin, Phone } from "lucide-react"
 
 export default function SettingsPage() {
   const { user, isLoading } = useAuth()
+  const { currency, setCurrency } = useCurrency()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [location, setLocation] = useState<string>(user?.location || "")
+  const [phone, setPhone] = useState<string>(user?.phone?.replace(/^\+\d+/, '') || "")
+  const [countryCode, setCountryCode] = useState<string>(user?.phone?.match(/^\+\d+/)?.[0] || "+256")
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -86,8 +92,39 @@ export default function SettingsPage() {
               <div className="flex-1">
                 <p className="text-sm text-stone-600">Account Role</p>
                 <Badge className="bg-gradient-to-r from-amber-600 to-amber-700 text-white mt-1">
-                  {user.role === "admin" ? "Administrator" : "Standard User"}
-                </Badge>
+                  </Badge>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center">
+                <Phone className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-stone-600">Phone Number</p>
+                <div className="flex gap-2 mt-1">
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-[100px] border-stone-300 bg-white h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+256">UG (+256)</SelectItem>
+                      <SelectItem value="+254">KE (+254)</SelectItem>
+                      <SelectItem value="+255">TZ (+255)</SelectItem>
+                      <SelectItem value="+250">RW (+250)</SelectItem>
+                      <SelectItem value="+257">BI (+257)</SelectItem>
+                      <SelectItem value="+243">CD (+243)</SelectItem>
+                      <SelectItem value="+211">SS (+211)</SelectItem>
+                      <SelectItem value="+1">US (+1)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="700 123 456"
+                    className="flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-600 h-9"
+                  />
+                </div>
               </div>
             </div>
 
@@ -113,7 +150,11 @@ export default function SettingsPage() {
                   const res = await fetch('/api/v1/profile', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: user.name, location }),
+                    body: JSON.stringify({ 
+                      name: user.name, 
+                      location,
+                      phone: phone ? `${countryCode}${phone.startsWith('0') ? phone.substring(1) : phone}` : undefined
+                    }),
                   })
                   const data = await res.json()
                   if (data?.success) {
@@ -178,23 +219,49 @@ export default function SettingsPage() {
 
         <Card className="border-stone-200">
           <CardHeader>
-            <CardTitle>Application Information</CardTitle>
-            <CardDescription>System details and version</CardDescription>
+            <CardTitle>Application Preferences</CardTitle>
+            <CardDescription>System details and display preferences</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-stone-600">Version</span>
+              <span className="text-sm text-stone-600">Version</span>
               <span className="font-medium text-stone-900">1.0.0</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-stone-600">Region</span>
+              <span className="text-sm text-stone-600">Region</span>
               <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                 Uganda
               </Badge>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-stone-600">Currency</span>
-              <span className="font-medium text-stone-900">UGX (Uganda Shillings)</span>
+            
+            <div className="space-y-2 border-t pt-4 border-stone-100">
+              <label className="text-sm font-medium text-stone-700">Display Currency</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                    { code: "UGX", name: "UGX (Shillings)" },
+                    { code: "USD", name: "USD ($)" },
+                    { code: "KES", name: "KES (Kenya)" },
+                    { code: "TZS", name: "TZS (Tanzania)" },
+                    { code: "EUR", name: "EUR (€)" },
+                    { code: "GBP", name: "GBP (£)" },
+                    { code: "RWF", name: "RWF (Rwanda)" },
+                ].map((cur) => (
+                  <Button
+                    key={cur.code}
+                    variant={currency === cur.code ? "default" : "outline"}
+                    className={cn(
+                      "text-xs py-1 h-9",
+                      currency === cur.code ? "bg-amber-600 hover:bg-amber-700" : "border-stone-200"
+                    )}
+                    onClick={() => setCurrency(cur.code as any)}
+                  >
+                    {cur.name}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-stone-500 mt-2 italic">
+                * This will change how monetary values are displayed across the entire application.
+              </p>
             </div>
           </CardContent>
         </Card>

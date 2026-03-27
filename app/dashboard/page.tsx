@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useCurrency } from "@/lib/currency-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +22,7 @@ const StatValue = ({ children }: { children: React.ReactNode }) => (
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth()
+  const { formatCurrency } = useCurrency()
   const router = useRouter()
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null)
   const [incomes, setIncomes] = useState<Income[]>([])
@@ -115,14 +117,6 @@ export default function DashboardPage() {
   const netProfit = financialSummary?.netProfit || 0
   const totalReceivables = financialSummary?.totalReceivables || 0
   const totalPayables = financialSummary?.totalPayables || 0
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   // Calculate stats from data - production volume from inventory (production), not sales
   // Group by unit to show accurate production volumes

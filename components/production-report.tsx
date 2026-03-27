@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useCurrency } from "@/lib/currency-context"
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
@@ -17,6 +18,7 @@ interface ProductionReportProps {
 
 export function ProductionReport({ selectedYear }: ProductionReportProps) {
   const { toast } = useToast()
+  const { formatCurrency } = useCurrency()
   const [loading, setLoading] = useState(true)
   const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [production, setProduction] = useState<InventoryItem[]>([])
@@ -66,13 +68,6 @@ export function ProductionReport({ selectedYear }: ProductionReportProps) {
     loadProduction()
   }, [selectedYear, toast])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {

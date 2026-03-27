@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useCurrency } from "@/lib/currency-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -86,6 +87,7 @@ const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4'
 
 export default function AdminPage() {
   const { user, isLoading: authLoading } = useAuth()
+  const { currency, formatCurrency } = useCurrency()
   const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
@@ -178,14 +180,6 @@ export default function AdminPage() {
       default:
         return "bg-stone-100 text-stone-700 border-stone-200"
     }
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
   }
 
   // Prepare chart data
@@ -568,7 +562,7 @@ export default function AdminPage() {
                   {categoryChartData.length > 0 ? (
                     <ChartContainer
                       config={{
-                        amount: { label: "Amount (UGX)", color: "hsl(var(--chart-1))" },
+                        amount: { label: `Amount (${currency})`, color: "hsl(var(--chart-1))" },
                       }}
                       className="h-[300px]"
                     >

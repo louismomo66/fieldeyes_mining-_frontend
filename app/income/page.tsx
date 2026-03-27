@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useCurrency } from "@/lib/currency-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,10 +42,11 @@ const gemstoneQualities = ["Rough", "Cut", "Polished", "Faceted", "Jewelry"]
 
 const productTypes = ["Mineral", "Supply", "Concentrates", "Tailings"]
 
-const units = ["grams (g)", "kilogram (kg)", "carats (ct)", "ounces (oz)", "tonnes", "trips", "loads", "sacks"]
+const units = ["grams (g)", "kilogram (kg)", "carats (ct)", "ounces (oz)", "tonnes", "trips", "loads", "sacks", "cubic meters (m³)", "basins"]
 
 export default function SalesManagement() {
   const { user, isLoading } = useAuth()
+  const { currency, formatCurrency } = useCurrency()
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [editingSale, setEditingSale] = useState<Income | null>(null)
@@ -173,6 +175,8 @@ export default function SalesManagement() {
     else if (sale.unit === "tonnes") unitDisplay = "tonnes"
     else if (sale.unit === "trips") unitDisplay = "trips"
     else if (sale.unit === "loads") unitDisplay = "loads"
+    else if (sale.unit === "m³") unitDisplay = "cubic meters (m³)"
+    else if (sale.unit === "basins") unitDisplay = "basins"
 
     setFormData({
       date: new Date(sale.date).toISOString().split("T")[0],
@@ -325,14 +329,6 @@ export default function SalesManagement() {
       console.error("Failed to delete sale:", error)
       toast.error("Failed to delete sales record")
     }
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
   }
 
   const formatDate = (date: Date | string) => {
@@ -540,7 +536,7 @@ export default function SalesManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price per Unit (UGX)</Label>
+                    <Label htmlFor="price">Price per Unit ({currency})</Label>
                     <Input
                       id="price"
                       type="text"
@@ -552,7 +548,7 @@ export default function SalesManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="total">Total Amount (UGX)</Label>
+                    <Label htmlFor="total">Total Amount ({currency})</Label>
                     <Input
                       id="total"
                       type="text"
@@ -612,7 +608,7 @@ export default function SalesManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
+                    <Label htmlFor="amountPaid">Amount Paid ({currency})</Label>
                     <Input
                       id="amountPaid"
                       type="text"

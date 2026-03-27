@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
+import { useCurrency } from "@/lib/currency-context"
 import { exportToCSV, exportToPDF, generateUserSerialNumber } from "@/lib/export-utils"
 import type { FinancialSummary, MonthlyData } from "@/lib/types"
 
@@ -16,6 +17,7 @@ interface FinancialSummaryReportProps {
 
 export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportProps) {
   const { toast } = useToast()
+  const { formatCurrency } = useCurrency()
   const [loading, setLoading] = useState(true)
   const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [summary, setSummary] = useState<FinancialSummary | null>(null)
@@ -50,14 +52,6 @@ export function FinancialSummaryReport({ selectedYear }: FinancialSummaryReportP
 
     loadFinancialData()
   }, [selectedYear, toast])
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   const handleExport = async () => {
     if (!summary) return

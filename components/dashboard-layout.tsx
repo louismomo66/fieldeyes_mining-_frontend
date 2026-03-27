@@ -48,6 +48,7 @@ const getNavigation = (isAdmin: boolean) => {
       { name: "Production", href: "/inventory", icon: Package },
       { name: "Reports", href: "/reports", icon: FileText },
       { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
+      { name: "Settings", href: "/settings", icon: Settings },
     ]
   }
   // Regular user navigation
@@ -58,6 +59,7 @@ const getNavigation = (isAdmin: boolean) => {
     { name: "Production", href: "/inventory", icon: Package },
     { name: "Reports", href: "/reports", icon: FileText },
     { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
+    { name: "Settings", href: "/settings", icon: Settings },
   ]
 }
 
@@ -187,7 +189,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-stone-600">{user?.email}</DropdownMenuItem>
+                <DropdownMenuItem className="text-stone-600 cursor-default">{user?.email}</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex w-full items-center">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />

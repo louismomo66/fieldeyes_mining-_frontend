@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Loader2 } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import { useToast } from "@/hooks/use-toast"
+import { useCurrency } from "@/lib/currency-context"
 import { exportToCSV, exportToPDF, generateUserSerialNumber } from "@/lib/export-utils"
 import type { Expense, CategoryBreakdown } from "@/lib/types"
 
@@ -17,6 +18,7 @@ interface ExpenseReportProps {
 
 export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
   const { toast } = useToast()
+  const { formatCurrency } = useCurrency()
   const [loading, setLoading] = useState(true)
   const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -67,14 +69,6 @@ export function ExpenseReport({ selectedYear }: ExpenseReportProps) {
 
     loadExpenses()
   }, [selectedYear, toast])
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {

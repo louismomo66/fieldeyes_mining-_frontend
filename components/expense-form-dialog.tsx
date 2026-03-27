@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useCurrency } from "@/lib/currency-context"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +23,7 @@ interface ExpenseFormDialogProps {
 
 export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialogProps) {
   const [open, setOpen] = useState(false)
+  const { currency } = useCurrency()
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -33,8 +35,28 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
     supplierContact: expense?.supplierContact || "",
     paymentStatus: expense?.paymentStatus || ("unpaid" as PaymentStatus),
     amountPaid: expense?.amountPaid ? formatWithCommas(expense.amountPaid) : "0",
+    quantity: expense?.quantity?.toString() || "",
+    unit: expense?.unit || "",
+    unitCost: expense?.quantity && expense.quantity > 0 && expense.amount ? (expense.amount / expense.quantity).toFixed(2) : "",
     notes: expense?.notes || "",
   })
+
+  // Auto-calculate amount based on quantity and unit cost
+  useEffect(() => {
+    if (formData.quantity && formData.unitCost) {
+      const q = Number.parseFloat(formData.quantity)
+      const u = Number.parseFloat(formData.unitCost)
+      if (!Number.isNaN(q) && !Number.isNaN(u)) {
+        const total = q * u
+        setFormData(prev => ({
+          ...prev,
+          amount: total.toFixed(2),
+          // Also default amountPaid to the total if not set
+          amountPaid: prev.amountPaid === "0" || prev.amountPaid === "" ? total.toFixed(2) : prev.amountPaid
+        }))
+      }
+    }
+  }, [formData.quantity, formData.unitCost])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,6 +70,8 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
       date: new Date(formData.date),
       category: formData.category,
       description: formData.description,
+      quantity: formData.quantity ? Number.parseFloat(formData.quantity) : undefined,
+      unit: formData.unit || undefined,
       amount,
       supplierName: formData.supplierName,
       supplierContact: formData.supplierContact || undefined,
@@ -105,12 +129,13 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="equipment">Equipment</SelectItem>
                   <SelectItem value="labor">Labor</SelectItem>
-                  <SelectItem value="chemicals">Chemicals</SelectItem>
+                  <SelectItem value="equipment">Equipment</SelectItem>
                   <SelectItem value="maintenance">Maintenance</SelectItem>
                   <SelectItem value="transport">Transport</SelectItem>
                   <SelectItem value="trips">Trips</SelectItem>
+                  <SelectItem value="chemicals">Chemicals</SelectItem>
+                  <SelectItem value="fuel">Fuel</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -128,7 +153,60 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount (UGX)</Label>
+              <Label htmlFor="quantity">Quantity (Optional)</Label>
+              <Input
+                id="quantity"
+                type="number"
+                step="0.01"
+                value={formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                placeholder="Enter quantity"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unit">Unit of Measurement (Optional)</Label>
+              <Select
+                value={formData.unit}
+                onValueChange={(value) => setFormData({ ...formData, unit: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="piece">Piece</SelectItem>
+                  <SelectItem value="dozen">Dozen</SelectItem>
+                  <SelectItem value="pair">Pair</SelectItem>
+                  <SelectItem value="roll">Roll</SelectItem>
+                  <SelectItem value="meters">Meters</SelectItem>
+                  <SelectItem value="inch">Inch</SelectItem>
+                  <SelectItem value="feet">Feet</SelectItem>
+                  <SelectItem value="liter">Liter</SelectItem>
+                  <SelectItem value="gram">Gram</SelectItem>
+                  <SelectItem value="kilogram">Kilogram</SelectItem>
+                  <SelectItem value="tonnes">Tonnes</SelectItem>
+                  <SelectItem value="day">Day</SelectItem>
+                  <SelectItem value="week">Week</SelectItem>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="others">Others</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unitCost">Unit Cost ({currency})</Label>
+              <Input
+                id="unitCost"
+                type="number"
+                step="0.01"
+                value={formData.unitCost}
+                onChange={(e) => setFormData({ ...formData, unitCost: e.target.value })}
+                placeholder="Enter unit cost"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount ({currency})</Label>
               <Input
                 id="amount"
                 type="text"
@@ -176,7 +254,7 @@ export function ExpenseFormDialog({ expense, onSave, trigger }: ExpenseFormDialo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
+              <Label htmlFor="amountPaid">Amount Paid ({currency})</Label>
               <Input
                 id="amountPaid"
                 type="text"

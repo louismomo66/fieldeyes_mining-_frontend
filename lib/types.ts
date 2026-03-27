@@ -6,7 +6,9 @@ export interface User {
   email: string
   name: string
   role: UserRole
-  createdAt: Date
+  phone?: string
+  location?: string
+  createdAt: Date | string
 }
 
 // Transaction Types
@@ -19,11 +21,12 @@ export type MineralType =
   | "graphite" | "gypsum" | "feldspar" | "limestone" | "marble" | "kaolin"
   | "phosphates" | "pozzolana" | "salt" | "sand" | "vermiculite" | "silver"
   | "granite" | "chromite" | "gemstones" | "other"
-export type ExpenseCategory = "equipment" | "labor" | "chemicals" | "maintenance" | "transport" | "trips" | "other"
+export type ExpenseCategory = "equipment" | "labor" | "chemicals" | "maintenance" | "transport" | "trips" | "fuel" | "other"
 
 export interface Income {
   id: string
   date: Date
+  itemName?: string
   mineralType: MineralType
   quantity: number
   unit: string

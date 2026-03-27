@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useCurrency } from "@/lib/currency-context"
 import type { Income, Expense } from "@/lib/types"
 
 interface RecentTransactionsProps {
@@ -12,6 +13,8 @@ interface RecentTransactionsProps {
 }
 
 export function RecentTransactions({ incomes, expenses }: RecentTransactionsProps) {
+  const { formatCurrency } = useCurrency()
+  
   // Combine and sort transactions by date
   const allTransactions = [
     ...incomes.map((income) => ({
@@ -28,16 +31,8 @@ export function RecentTransactions({ incomes, expenses }: RecentTransactionsProp
       totalAmount: expense.amount,
     })),
   ]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => new Date(b.date as any).getTime() - new Date(a.date as any).getTime())
     .slice(0, 5)
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {

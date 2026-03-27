@@ -13,11 +13,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertCircle, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function SignupPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
+  const [countryCode, setCountryCode] = useState("+256")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -43,7 +45,8 @@ export default function SignupPage() {
 
     setIsLoading(true)
 
-    const result = await signup(email, password, name, phone || undefined, undefined)
+    const fullPhone = phone ? `${countryCode}${phone.startsWith('0') ? phone.substring(1) : phone}` : undefined
+    const result = await signup(email, password, name, fullPhone, undefined)
 
     if (result.success) {
       router.push("/dashboard")
@@ -106,14 +109,31 @@ export default function SignupPage() {
               <Label htmlFor="phone" className="text-stone-700">
                 Phone Number (Optional)
               </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+256 700 123 456"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="border-stone-300"
-              />
+              <div className="flex gap-2">
+                <Select value={countryCode} onValueChange={setCountryCode}>
+                  <SelectTrigger className="w-[110px] border-stone-300">
+                    <SelectValue placeholder="Code" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="+256">UG (+256)</SelectItem>
+                    <SelectItem value="+254">KE (+254)</SelectItem>
+                    <SelectItem value="+255">TZ (+255)</SelectItem>
+                    <SelectItem value="+250">RW (+250)</SelectItem>
+                    <SelectItem value="+257">BI (+257)</SelectItem>
+                    <SelectItem value="+243">CD (+243)</SelectItem>
+                    <SelectItem value="+211">SS (+211)</SelectItem>
+                    <SelectItem value="+1">US (+1)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="700 123 456"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="flex-1 border-stone-300"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useCurrency } from "@/lib/currency-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 export default function ExpensesPage() {
   const { user, isLoading } = useAuth()
+  const { currency, formatCurrency } = useCurrency()
   const router = useRouter()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -36,6 +38,7 @@ export default function ExpensesPage() {
     supplierContact: "",
     paymentStatus: "unpaid" as PaymentStatus,
     amountPaid: "0",
+    unitCost: "",
     notes: "",
   })
 
@@ -53,7 +56,7 @@ export default function ExpensesPage() {
           console.log("Expenses Page - Expenses data from backend:", data)
           console.log("Expenses Page - Total expenses count:", data.length)
           console.log("Expenses Page - Total expenses amount:", data.reduce((sum, expense) => sum + expense.amount, 0))
-          console.log("Expenses Page - Total payables:", data.reduce((sum, expense) => sum + expense.amountDue, 0))
+          console.log("Expenses Page - Total payables:", data.reduce((sum, expense) => sum + expense.amountDue || 0, 0))
           setExpenses(data)
         } catch (error) {
           console.error("Error loading expenses:", error)
@@ -65,6 +68,23 @@ export default function ExpensesPage() {
 
     loadExpenses()
   }, [user])
+
+  // Auto-calculate total amount based on quantity and unit cost
+  useEffect(() => {
+    if (formData.quantity && formData.unitCost) {
+      const q = Number.parseFloat(formData.quantity)
+      const u = Number.parseFloat(formData.unitCost)
+      if (!Number.isNaN(q) && !Number.isNaN(u)) {
+        const total = q * u
+        setFormData(prev => ({
+          ...prev,
+          amount: total.toFixed(2),
+          // Also set amountPaid to the total by default if it's currently 0 or empty (for convenience)
+          amountPaid: prev.amountPaid === "0" || prev.amountPaid === "" ? total.toFixed(2) : prev.amountPaid
+        }))
+      }
+    }
+  }, [formData.quantity, formData.unitCost])
 
   if (isLoading || !user || loading) {
     return (
@@ -86,6 +106,7 @@ export default function ExpensesPage() {
       supplierContact: "",
       paymentStatus: "unpaid",
       amountPaid: "0",
+      unitCost: "",
       notes: "",
     })
     setEditingExpense(null)
@@ -177,14 +198,6 @@ export default function ExpensesPage() {
       expense.description.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
@@ -229,6 +242,7 @@ export default function ExpensesPage() {
       supplierContact: expense.supplierContact || "",
       paymentStatus: expense.paymentStatus,
       amountPaid: expense.amountPaid.toString(),
+      unitCost: expense.quantity && expense.quantity > 0 ? (expense.amount / expense.quantity).toFixed(2) : "",
       notes: expense.notes || "",
     })
   }
@@ -294,6 +308,7 @@ export default function ExpensesPage() {
                         <SelectItem value="transport">Transport</SelectItem>
                         <SelectItem value="trips">Trips</SelectItem>
                         <SelectItem value="chemicals">Chemicals</SelectItem>
+                        <SelectItem value="fuel">Fuel</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -352,7 +367,19 @@ export default function ExpensesPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Amount (UGX)</Label>
+                    <Label htmlFor="unitCost">Unit Cost ({currency})</Label>
+                    <Input
+                      id="unitCost"
+                      type="number"
+                      step="0.01"
+                      value={formData.unitCost}
+                      onChange={(e) => setFormData({ ...formData, unitCost: e.target.value })}
+                      placeholder="Enter unit cost"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount ({currency})</Label>
                     <Input
                       id="amount"
                       type="number"
@@ -364,7 +391,7 @@ export default function ExpensesPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
+                    <Label htmlFor="amountPaid">Amount Paid ({currency})</Label>
                     <Input
                       id="amountPaid"
                       type="number"
@@ -393,7 +420,7 @@ export default function ExpensesPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="amountDue">Amount Due (UGX)</Label>
+                    <Label htmlFor="amountDue">Amount Due ({currency})</Label>
                     <Input
                       id="amountDue"
                       type="number"

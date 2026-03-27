@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useCurrency } from "@/lib/currency-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +40,7 @@ const processingMethods = [
 
 export default function ProductionManagement() {
   const { user, isLoading } = useAuth()
+  const { formatCurrency } = useCurrency()
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
@@ -102,7 +104,10 @@ export default function ProductionManagement() {
     else if (item.unit === "g") unitDisplay = "grams (g)"
     else if (item.unit === "ct") unitDisplay = "carats (ct)"
     else if (item.unit === "oz") unitDisplay = "ounces (oz)"
+    else if (item.unit === "oz") unitDisplay = "ounces (oz)"
     else if (item.unit === "tonnes") unitDisplay = "tonnes"
+    else if (item.unit === "m³") unitDisplay = "cubic meters (m³)"
+    else if (item.unit === "basins") unitDisplay = "basins"
 
     setFormData({
       date: item.date ? new Date(item.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
@@ -240,14 +245,6 @@ export default function ProductionManagement() {
       console.error("Failed to delete production:", error)
       toast.error("Failed to delete production record")
     }
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
   }
 
   const formatDate = (date: Date | string) => {
@@ -506,6 +503,8 @@ export default function ProductionManagement() {
                         <SelectItem value="oz">Ounces (oz)</SelectItem>
                         <SelectItem value="ct">Carats (ct)</SelectItem>
                         <SelectItem value="trips">Trips</SelectItem>
+                        <SelectItem value="m³">Cubic meters (m³)</SelectItem>
+                        <SelectItem value="basins">Basins</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

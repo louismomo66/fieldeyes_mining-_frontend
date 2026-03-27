@@ -10,7 +10,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://mining-backend.field-eyes.com/api/:path*',
+        destination: 'http://localhost:9006/api/:path*',
       },
     ]
   },

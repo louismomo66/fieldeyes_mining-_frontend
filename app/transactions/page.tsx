@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useCurrency } from "@/lib/currency-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +18,7 @@ import type { Transaction, Income, Expense } from "@/lib/types"
 
 export default function TransactionsPage() {
   const { user, isLoading } = useAuth()
+  const { formatCurrency } = useCurrency()
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all")
@@ -104,13 +106,6 @@ export default function TransactionsPage() {
     return true
   })
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {

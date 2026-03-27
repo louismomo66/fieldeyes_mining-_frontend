@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import { useCurrency } from "@/lib/currency-context"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,6 +25,7 @@ interface IncomeFormDialogProps {
 
 export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogProps) {
   const [open, setOpen] = useState(false)
+  const { currency } = useCurrency()
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -242,12 +244,14 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
                   <SelectItem value="trips">Trips</SelectItem>
                   <SelectItem value="loads">Loads</SelectItem>
                   <SelectItem value="sacks">Sacks</SelectItem>
+                  <SelectItem value="m³">Cubic meters (m³)</SelectItem>
+                  <SelectItem value="basins">Basins</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pricePerUnit">Price per Unit (UGX)</Label>
+              <Label htmlFor="pricePerUnit">Price per Unit ({currency})</Label>
               <Input
                 id="pricePerUnit"
                 type="text"
@@ -262,8 +266,8 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
               <Input
                 value={
                   formData.quantity && formData.pricePerUnit
-                    ? `UGX ${formatWithCommas(Number.parseFloat(formData.quantity) * Number.parseFloat(parseCommas(formData.pricePerUnit)))}`
-                    : "UGX 0"
+                    ? `${currency} ${formatWithCommas(Number.parseFloat(formData.quantity) * Number.parseFloat(parseCommas(formData.pricePerUnit)))}`
+                    : `${currency} 0`
                 }
                 disabled
                 className="bg-stone-50"
@@ -308,7 +312,7 @@ export function IncomeFormDialog({ income, onSave, trigger }: IncomeFormDialogPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amountPaid">Amount Paid (UGX)</Label>
+              <Label htmlFor="amountPaid">Amount Paid ({currency})</Label>
               <Input
                 id="amountPaid"
                 type="text"

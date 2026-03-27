@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useCurrency } from "@/lib/currency-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { dataService } from "@/lib/data-service"
@@ -26,6 +27,7 @@ import type { FinancialSummary, MonthlyData, CategoryBreakdown } from "@/lib/typ
 
 export default function AnalyticsPage() {
   const { user, isLoading } = useAuth()
+  const { formatCurrency } = useCurrency()
   const router = useRouter()
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null)
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
@@ -101,13 +103,6 @@ export default function AnalyticsPage() {
     )
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-UG", {
-      style: "currency",
-      currency: "UGX",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   // Calculate totals from real data
   const totalIncome = financialSummary?.totalIncome || 0
@@ -259,7 +254,7 @@ export default function AnalyticsPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name || ""}: ${((percent || 0) * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
