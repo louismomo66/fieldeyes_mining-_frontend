@@ -70,9 +70,5 @@
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp"
-    ]
-  }
+  "packageManager": "pnpm@9.15.0"
 }
