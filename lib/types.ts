@@ -14,6 +14,7 @@ export interface User {
 // Transaction Types
 export type TransactionType = "income" | "expense"
 export type PaymentStatus = "paid" | "unpaid" | "partial"
+export type SalesType = "mineral" | "supply" | "concentrates" | "tailings"
 export type MineralType =
   | "gold" | "copper" | "cobalt" | "diamond" | "iron_ore" | "lead" | "zinc"
   | "lithium" | "nickel" | "coltan" | "tin" | "wolfram" | "titanium"
@@ -28,6 +29,8 @@ export interface Income {
   date: Date
   itemName?: string
   mineralType: MineralType
+  salesType?: SalesType
+  gemstoneType?: GemstoneType
   quantity: number
   unit: string
   pricePerUnit: number
