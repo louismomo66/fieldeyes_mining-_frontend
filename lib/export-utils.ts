@@ -120,11 +120,9 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
 
   // Load logos and generate PDF
   Promise.all([
-    loadLogoAsBase64('/logo.png'),
-    loadLogoAsBase64('/logo3.jpg')
-  ]).then(([logoBase64, logo3Base64]) => {
+    loadLogoAsBase64('/logo.png')
+  ]).then(([logoBase64]) => {
     const logoImg = logoBase64 ? `<img src="${logoBase64}" alt="Company Logo" class="logo" />` : ''
-    const logo3Img = logo3Base64 ? `<img src="${logo3Base64}" alt="Partner Logo" class="logo" style="margin-left: 10px; border-radius: 4px;" />` : ''
     const generatedDate = new Date().toLocaleString()
 
     // Create a printable HTML document
@@ -207,7 +205,6 @@ export function exportToPDF(headers: string[], rows: string[][], title: string, 
           <div className="header">
             <div style="display: flex; align-items: center; gap: 15px;">
               ${logoImg}
-              ${logo3Img}
             </div>
             <div class="header-info">
               <h1>${escapeHtml(title)}</h1>

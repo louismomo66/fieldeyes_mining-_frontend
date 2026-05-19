@@ -52,15 +52,6 @@ export default function LoginPage() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <div className="w-16 h-16">
-              <Image
-                src="/logo3.jpg"
-                alt="Partner Logo"
-                width={64}
-                height={64}
-                className="w-full h-full object-contain rounded-md"
-              />
-            </div>
           </div>
           <CardTitle className="text-3xl font-bold text-stone-900">Mine Manager</CardTitle>
           <CardDescription className="text-stone-600">Sign in to manage your mining operations</CardDescription>

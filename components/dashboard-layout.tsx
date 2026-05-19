@@ -121,15 +121,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <div className="w-8 h-8">
-                <Image
-                  src="/logo3.jpg"
-                  alt="Partner Logo"
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-contain rounded-sm"
-                />
-              </div>
               <h1 className="text-xl font-bold text-stone-900">
                 Mine Manager
               </h1>
