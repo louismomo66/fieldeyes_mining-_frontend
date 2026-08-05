@@ -1,26 +1,17 @@
-"use client"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { SESSION_HINT_COOKIE } from "@/lib/session-hint"
 
-export default function HomePage() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
+// Server-side redirect. This route ships no client JavaScript, so opening "/"
+// no longer has to compile and boot a client page, mount AuthProvider and wait
+// on a getProfile() round-trip before it knows where to send you.
+//
+// The cookie is only a hint (see lib/session-hint.ts). If it is stale, the
+// destination page's own auth guard bounces the user back to /login.
+export default async function HomePage() {
+  const cookieStore = await cookies()
+  const hasSession = cookieStore.get(SESSION_HINT_COOKIE)?.value === "1"
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (user) {
-        router.push("/dashboard")
-      } else {
-        router.push("/login")
-      }
-    }
-  }, [user, isLoading, router])
-
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
-    </div>
-  )
+  redirect(hasSession ? "/dashboard" : "/login")
 }

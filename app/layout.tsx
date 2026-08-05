@@ -1,13 +1,10 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/lib/auth-context"
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import "./globals.css"
-
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Mine Manager",
@@ -33,7 +30,12 @@ export default function RootLayout({
         <AuthProvider>
           <CurrencyProvider>
             {children}
+            {/* Two toast systems are in use: the Radix one via use-toast (dialogs,
+                reports) and sonner (the compliance, lots, inventory, income,
+                expenses, mine-info and traceability pages). Both have to be
+                mounted or one set of messages silently never renders. */}
             <Toaster />
+            <SonnerToaster position="top-right" richColors closeButton />
             <SyncIndicator />
           </CurrencyProvider>
         </AuthProvider>

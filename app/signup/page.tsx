@@ -25,6 +25,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [chainRole, setChainRole] = useState("operator")
   const { signup } = useAuth()
   const router = useRouter()
 
@@ -46,7 +47,7 @@ export default function SignupPage() {
     setIsLoading(true)
 
     const fullPhone = phone ? `${countryCode}${phone.startsWith('0') ? phone.substring(1) : phone}` : undefined
-    const result = await signup(email, password, name, fullPhone, undefined)
+    const result = await signup(email, password, name, fullPhone, undefined, chainRole)
 
     if (result.success) {
       router.push("/dashboard")
@@ -75,6 +76,30 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-stone-700">Your role in the mineral chain</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "operator", label: "Mine operator", desc: "Sites, production, lots" },
+                  { value: "transporter", label: "Transporter", desc: "Move lots between parties" },
+                  { value: "exporter", label: "Exporter", desc: "Process and export" },
+                  { value: "inspector", label: "Inspector", desc: "Certify sites, view all" },
+                ].map((r) => (
+                  <button
+                    type="button"
+                    key={r.value}
+                    onClick={() => setChainRole(r.value)}
+                    className={`rounded-lg border p-2.5 text-left transition-colors ${
+                      chainRole === r.value ? "border-emerald-600 bg-emerald-50" : "border-stone-200 hover:border-stone-300"
+                    }`}
+                  >
+                    <p className={`text-sm font-medium ${chainRole === r.value ? "text-emerald-900" : "text-stone-800"}`}>{r.label}</p>
+                    <p className="text-[11px] text-stone-500">{r.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="name" className="text-stone-700">
                 Full Name

@@ -31,6 +31,7 @@ interface SignupRequest {
   phone?: string
   password: string
   admin_code?: string
+  chain_role?: string
 }
 
 interface ForgotPasswordRequest {
@@ -81,6 +82,9 @@ interface InventoryRequest {
   processing_method?: string
   product?: string
   gemstone_type?: string
+  grade_value?: number
+  grade_unit?: string
+  grade_notes?: string
   quantity: number
   unit: string
   min_stock_level: number
@@ -100,6 +104,8 @@ interface MineSiteInfoRequest {
   established_year?: number
   contact?: string
 }
+
+type ComplianceRequest = Record<string, unknown>
 
 class ApiService {
   private getAuthToken(): string | null {
@@ -358,6 +364,173 @@ class ApiService {
     return this.makeRequest('/analytics/expense-breakdown')
   }
 
+  // ICGLR compliance methods
+  async getComplianceSummary(): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/summary')
+  }
+
+  async getMineSiteCertifications(): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/mine-site-certifications/')
+  }
+
+  async createMineSiteCertification(data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/mine-site-certifications/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateMineSiteCertification(id: number, data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/mine-site-certifications/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteMineSiteCertification(id: number): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/mine-site-certifications/${id}`, { method: 'DELETE' })
+  }
+
+  async getCoCLots(): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/coc-lots/')
+  }
+
+  async createCoCLot(data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/coc-lots/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateCoCLot(id: number, data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/coc-lots/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteCoCLot(id: number): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/coc-lots/${id}`, { method: 'DELETE' })
+  }
+
+  // Full production→transport→export trace for one lot
+  async getLotPassport(id: number): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/coc-lots/${id}/passport`)
+  }
+
+  // Hand a lot's custody to another registered user by email (multi-party CoC)
+  async handoverCoCLot(id: number, data: { to_email: string; note?: string; location?: string }): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/coc-lots/${id}/handover`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getExportShipments(): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/export-shipments/')
+  }
+
+  async createExportShipment(data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/export-shipments/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateExportShipment(id: number, data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/export-shipments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteExportShipment(id: number): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/export-shipments/${id}`, { method: 'DELETE' })
+  }
+
+  async getDueDiligenceReports(): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/due-diligence-reports/')
+  }
+
+  async createDueDiligenceReport(data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/due-diligence-reports/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateDueDiligenceReport(id: number, data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/due-diligence-reports/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteDueDiligenceReport(id: number): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/due-diligence-reports/${id}`, { method: 'DELETE' })
+  }
+
+  async getThirdPartyAudits(): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/third-party-audits/')
+  }
+
+  async createThirdPartyAudit(data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/third-party-audits/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateThirdPartyAudit(id: number, data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/third-party-audits/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteThirdPartyAudit(id: number): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/third-party-audits/${id}`, { method: 'DELETE' })
+  }
+
+  async getComplianceDocuments(): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/documents/')
+  }
+
+  async createComplianceDocument(data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/documents/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateComplianceDocument(id: number, data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/documents/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteComplianceDocument(id: number): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/documents/${id}`, { method: 'DELETE' })
+  }
+
+  // Production record linking methods for CoC lots
+  async getAvailableProductionRecords(mineralType?: string): Promise<ApiResponse> {
+    const url = mineralType ? `/compliance/coc-lots/production-records?mineral_type=${encodeURIComponent(mineralType)}` : '/compliance/coc-lots/production-records'
+    return this.makeRequest(url)
+  }
+
+  async getProductionRecordsByPit(pitNumber: string): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/coc-lots/production-records/by-pit?pit_number=${pitNumber}`)
+  }
+
+  async linkProductionRecords(cocLotId: number, productionRecordIds: number[]): Promise<ApiResponse> {
+    return this.makeRequest(`/compliance/coc-lots/${cocLotId}/production-records`, {
+      method: 'POST',
+      body: JSON.stringify({ production_record_ids: productionRecordIds }),
+    })
+  }
+
   // Mine site info methods
   async getMineSiteInfo(): Promise<ApiResponse> {
     return this.makeRequest('/minesite')
@@ -399,6 +572,69 @@ class ApiService {
       url += `?start_date=${startDate}&end_date=${endDate}`
     }
     return this.makeRequest(url)
+  }
+
+  // Enhanced Traceability methods
+  async getTransportRecords(): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/transport')
+  }
+
+  async createTransportRecord(data: any): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/transport', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateTransportStatus(id: number, data: any): Promise<ApiResponse> {
+    return this.makeRequest(`/traceability/transport/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getProcessingRecords(): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/processing')
+  }
+
+  async createProcessingRecord(data: any): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/processing', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getRealTimeTracking(): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/tracking')
+  }
+
+  async updateLotLocation(data: any): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/tracking/location', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getStakeholders(): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/stakeholders')
+  }
+
+  async createStakeholder(data: any): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/stakeholders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getTrackingAlerts(): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/alerts')
+  }
+
+  async createTrackingAlert(data: any): Promise<ApiResponse> {
+    return this.makeRequest('/traceability/alerts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   }
 }
 

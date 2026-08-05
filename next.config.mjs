@@ -6,6 +6,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Only compile the icons/components you actually import, not the whole library.
+  // Big win for dev compile times with lucide-react, recharts and Radix.
+  experimental: {
+    optimizePackageImports: ["lucide-react", "recharts", "date-fns", "qrcode.react"],
+  },
   async rewrites() {
     return [
       {

@@ -125,6 +125,20 @@ export default function MineSiteInfoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // The backend validates contact as strict E.164 (^\+?[1-9]\d{1,14}$) or an
+    // email, so "+256 772 123456" and "0772-123-456" are both rejected. Strip
+    // the punctuation people naturally type before we send it.
+    const contact = formData.contact.trim()
+    const looksLikeEmail = contact.includes("@")
+    const normalisedContact = looksLikeEmail ? contact : contact.replace(/[\s()\-.]/g, "")
+
+    if (!looksLikeEmail && !/^\+?[1-9]\d{1,14}$/.test(normalisedContact)) {
+      toast.error(
+        "Enter the contact as an email, or a phone number in international format (e.g. +256772123456). A leading 0 must be replaced by your country code.",
+      )
+      return
+    }
+
     try {
       const updatedInfo = await dataService.createOrUpdateMineSiteInfo({
         owner: formData.owner,
@@ -136,7 +150,7 @@ export default function MineSiteInfoPage() {
         equipment: formData.equipment || undefined,
         employees: formData.employees ? parseInt(formData.employees) : undefined,
         established_year: formData.establishedYear ? parseInt(formData.establishedYear) : undefined,
-        contact: formData.contact, // Required field
+        contact: normalisedContact, // Required field
       })
 
       if (updatedInfo) {
@@ -151,7 +165,7 @@ export default function MineSiteInfoPage() {
       }
     } catch (error) {
       console.error("Failed to save mine site info:", error)
-      toast.error("Failed to update mine site information")
+      toast.error(error instanceof Error ? error.message : "Failed to update mine site information")
     }
   }
   return (

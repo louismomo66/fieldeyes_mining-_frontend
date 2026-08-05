@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { User } from "./types"
 import { apiService } from "./api"
+import { clearSessionHint, setSessionHint } from "./session-hint"
 
 interface AuthContextType {
   user: User | null
@@ -14,6 +15,7 @@ interface AuthContextType {
     name: string,
     phone?: string,
     adminCode?: string,
+    chainRole?: string,
   ) => Promise<{ success: boolean; error?: string }>
   sendPasswordResetOTP: (email: string) => Promise<{ success: boolean; error?: string }>
   verifyOTPAndResetPassword: (
@@ -39,16 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       apiService.getProfile().then((response) => {
         if (response.success && response.data) {
           setUser(response.data)
+          setSessionHint()
         } else {
           // Token is invalid, remove it
           localStorage.removeItem("auth_token")
+          clearSessionHint()
         }
         setIsLoading(false)
       }).catch(() => {
         localStorage.removeItem("auth_token")
+        clearSessionHint()
         setIsLoading(false)
       })
     } else {
+      clearSessionHint()
       setIsLoading(false)
     }
   }, [])
@@ -60,12 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.data) {
         // Store the token
         localStorage.setItem("auth_token", response.data.token)
-        
+        setSessionHint()
+
         // Set user data
         setUser(response.data.user)
         return true
       }
-      
+
       return false
     } catch (error) {
       console.error("Login error:", error)
@@ -79,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string,
     phone?: string,
     adminCode?: string,
+    chainRole?: string,
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await apiService.signup({
@@ -87,12 +95,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone,
         password,
         admin_code: adminCode,
+        chain_role: chainRole,
       })
       
       if (response.success && response.data) {
         // Store the token
         localStorage.setItem("auth_token", response.data.token)
-        
+        setSessionHint()
+
         // Set user data
         setUser(response.data.user)
         return { success: true }
@@ -136,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem("auth_token")
+    clearSessionHint()
   }
 
   return (

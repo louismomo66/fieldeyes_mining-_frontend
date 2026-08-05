@@ -38,6 +38,24 @@ const processingMethods = [
   "polishing", "washing"
 ]
 
+const gradeUnitsByMineral: Record<string, string[]> = {
+  Gold: ["g/t Au", "% Au", "karat", "purity %"],
+  Tin: ["% Sn", "% SnO2"],
+  Coltan: ["% Ta2O5", "% Nb2O5", "% Ta"],
+  Wolfram: ["% WO3", "% W"],
+  Copper: ["% Cu"],
+  Cobalt: ["% Co"],
+  Iron: ["% Fe"],
+  "Iron Ore": ["% Fe"],
+  Lead: ["% Pb"],
+  Zinc: ["% Zn"],
+  Lithium: ["% Li2O"],
+  Nickel: ["% Ni"],
+  Silver: ["g/t Ag", "% Ag"],
+  Chromite: ["% Cr2O3"],
+  default: ["%", "g/t", "ppm", "purity %"],
+}
+
 export default function ProductionManagement() {
   const { user, isLoading } = useAuth()
   const { formatCurrency } = useCurrency()
@@ -58,6 +76,9 @@ export default function ProductionManagement() {
     method: "" as ProcessingMethod | "",
     product: "" as ProductType | "",
     gemstoneType: "" as GemstoneType | "",
+    gradeValue: "",
+    gradeUnit: "",
+    gradeNotes: "",
     quantity: "",
     unit: "kg",
     notes: "",
@@ -120,6 +141,9 @@ export default function ProductionManagement() {
       method: item.processingMethod || ("" as ProcessingMethod | ""),
       product: item.product || ("" as ProductType | ""),
       gemstoneType: item.gemstoneType || ("" as GemstoneType | ""),
+      gradeValue: item.gradeValue?.toString() || "",
+      gradeUnit: item.gradeUnit || "",
+      gradeNotes: item.gradeNotes || "",
       quantity: item.quantity.toString(),
       unit: unitDisplay,
       notes: "",
@@ -152,6 +176,9 @@ export default function ProductionManagement() {
         processingMethod: formData.source === "processing" && formData.method ? formData.method : undefined,
         product: formData.product || undefined,
         gemstoneType: formData.mineral === "Gemstones" && formData.gemstoneType ? formData.gemstoneType : undefined,
+        gradeValue: formData.gradeValue ? parseFloat(formData.gradeValue) : undefined,
+        gradeUnit: formData.gradeUnit || undefined,
+        gradeNotes: formData.gradeNotes || undefined,
         quantity: parseFloat(formData.quantity),
         unit: unitValue,
         minStockLevel: 0, // Default for production records
@@ -172,6 +199,9 @@ export default function ProductionManagement() {
           processingMethod: itemData.processingMethod,
           product: itemData.product,
           gemstoneType: itemData.gemstoneType,
+          gradeValue: itemData.gradeValue,
+          gradeUnit: itemData.gradeUnit,
+          gradeNotes: itemData.gradeNotes,
           quantity: itemData.quantity!,
           unit: itemData.unit!,
           minStockLevel: itemData.minStockLevel!,
@@ -195,6 +225,9 @@ export default function ProductionManagement() {
           processingMethod: itemData.processingMethod,
           product: itemData.product,
           gemstoneType: itemData.gemstoneType,
+          gradeValue: itemData.gradeValue,
+          gradeUnit: itemData.gradeUnit,
+          gradeNotes: itemData.gradeNotes,
           quantity: itemData.quantity!,
           unit: itemData.unit!,
           minStockLevel: itemData.minStockLevel!,
@@ -222,6 +255,9 @@ export default function ProductionManagement() {
         method: "" as ProcessingMethod | "",
         product: "" as ProductType | "",
         gemstoneType: "" as GemstoneType | "",
+        gradeValue: "",
+        gradeUnit: "",
+        gradeNotes: "",
         quantity: "",
         unit: "kg",
         notes: "",
@@ -509,6 +545,48 @@ export default function ProductionManagement() {
                     </Select>
                   </div>
 
+                  {/* Grade Information Fields */}
+                  <div className="space-y-2">
+                    <Label htmlFor="gradeValue">Grade Value</Label>
+                    <Input
+                      id="gradeValue"
+                      type="number"
+                      step="0.0001"
+                      placeholder="e.g., 2.5"
+                      value={formData.gradeValue}
+                      onChange={(e) => setFormData({ ...formData, gradeValue: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gradeUnit">Grade Unit</Label>
+                    <Select
+                      value={formData.gradeUnit}
+                      onValueChange={(value) => setFormData({ ...formData, gradeUnit: value })}
+                    >
+                      <SelectTrigger className="border-stone-300">
+                        <SelectValue placeholder="Select grade unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(gradeUnitsByMineral[formData.mineral] || gradeUnitsByMineral.default).map((unit) => (
+                          <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                        ))}
+                        <SelectItem value="custom">Custom Unit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="gradeNotes">Grade Notes</Label>
+                    <Input
+                      id="gradeNotes"
+                      type="text"
+                      placeholder="Additional grade information, assay details, etc."
+                      value={formData.gradeNotes}
+                      onChange={(e) => setFormData({ ...formData, gradeNotes: e.target.value })}
+                    />
+                  </div>
+
 
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="notes">
@@ -552,6 +630,9 @@ export default function ProductionManagement() {
                         method: "" as ProcessingMethod | "",
                         product: "" as ProductType | "",
                         gemstoneType: "" as GemstoneType | "",
+                        gradeValue: "",
+                        gradeUnit: "",
+                        gradeNotes: "",
                         quantity: "",
                         unit: "kg",
                         notes: "",
@@ -594,13 +675,14 @@ export default function ProductionManagement() {
                       <th className="p-3 text-left font-medium text-stone-900">Source</th>
                       <th className="p-3 text-left font-medium text-stone-900">Pit/Miner</th>
                       <th className="p-3 text-left font-medium text-stone-900">Quantity</th>
+                      <th className="p-3 text-left font-medium text-stone-900">Grade</th>
                       <th className="p-3 text-left font-medium text-stone-900">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {production.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-stone-500">
+                        <td colSpan={7} className="p-8 text-center text-stone-500">
                           No production records found. Click "Add Production" to create one.
                         </td>
                       </tr>
@@ -633,6 +715,18 @@ export default function ProductionManagement() {
                             </td>
                             <td className="p-3 text-stone-700">
                               {item.quantity.toLocaleString()} {item.unit}
+                            </td>
+                            <td className="p-3 text-stone-700">
+                              {item.gradeValue && item.gradeUnit ? (
+                                <div className="text-sm">
+                                  <div className="font-medium">{item.gradeValue} {item.gradeUnit}</div>
+                                  {item.gradeNotes && (
+                                    <div className="text-xs text-stone-500 truncate max-w-24" title={item.gradeNotes}>
+                                      {item.gradeNotes}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : "-"}
                             </td>
                             <td className="p-3">
                               <div className="flex gap-2">

@@ -28,8 +28,10 @@ import {
   Menu,
   LogOut,
   Shield,
+  ShieldCheck,
   MapPin,
   Eye,
+  Boxes,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -37,7 +39,9 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-const getNavigation = (isAdmin: boolean) => {
+const ALL_ROLES = ["operator", "transporter", "exporter", "inspector"]
+
+const getNavigation = (isAdmin: boolean, chainRole?: string) => {
   if (isAdmin) {
     // Admin navigation - different from regular users
     return [
@@ -46,21 +50,37 @@ const getNavigation = (isAdmin: boolean) => {
       { name: "Sales", href: "/income", icon: TrendingUp },
       { name: "Expenses", href: "/expenses", icon: TrendingDown },
       { name: "Production", href: "/inventory", icon: Package },
+      { name: "Inventory", href: "/stock", icon: Boxes },
       { name: "Reports", href: "/reports", icon: FileText },
+      // Lots, Compliance and Traceability are one section with sub-tabs; the
+      // individual routes still exist for links and bookmarks.
+      { name: "Lots & Compliance", href: "/lots-compliance", icon: ShieldCheck },
       { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
       { name: "Settings", href: "/settings", icon: Settings },
     ]
   }
-  // Regular user navigation
-  return [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Sales", href: "/income", icon: TrendingUp },
-    { name: "Expenses", href: "/expenses", icon: TrendingDown },
-    { name: "Production", href: "/inventory", icon: Package },
-    { name: "Reports", href: "/reports", icon: FileText },
-    { name: "Mine Site Info", href: "/mine-info", icon: MapPin },
-    { name: "Settings", href: "/settings", icon: Settings },
+  // Regular user navigation, scoped by supply-chain role.
+  // Each item lists the roles that see it. Empty chain_role (legacy accounts)
+  // and inspectors see everything, so nothing breaks for existing users.
+  const items = [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ALL_ROLES },
+    { name: "Sales", href: "/income", icon: TrendingUp, roles: ["operator", "exporter"] },
+    { name: "Expenses", href: "/expenses", icon: TrendingDown, roles: ["operator", "transporter", "exporter"] },
+    { name: "Production", href: "/inventory", icon: Package, roles: ["operator"] },
+    { name: "Inventory", href: "/stock", icon: Boxes, roles: ALL_ROLES },
+    { name: "Reports", href: "/reports", icon: FileText, roles: ["operator", "exporter"] },
+    // Lots, Compliance and Traceability are one section with sub-tabs. Every
+    // role needs it, because a transporter or exporter holds lots without ever
+    // recording production.
+    { name: "Lots & Compliance", href: "/lots-compliance", icon: ShieldCheck, roles: ALL_ROLES },
+    { name: "Mine Site Info", href: "/mine-info", icon: MapPin, roles: ["operator"] },
+    { name: "Settings", href: "/settings", icon: Settings, roles: ALL_ROLES },
   ]
+  // Legacy accounts (no role) and inspectors get the full menu.
+  if (!chainRole || chainRole === "inspector") {
+    return items.map(({ roles, ...rest }) => rest)
+  }
+  return items.filter((i) => i.roles.includes(chainRole)).map(({ roles, ...rest }) => rest)
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -75,6 +95,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     router.prefetch('/income')
     router.prefetch('/inventory')
     router.prefetch('/reports')
+    router.prefetch('/lots-compliance')
+    router.prefetch('/compliance')
+    router.prefetch('/traceability')
     router.prefetch('/mine-info')
   }, [router])
 
@@ -135,9 +158,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-            {getNavigation(user?.role === "admin")
+            {getNavigation(user?.role === "admin", user?.chain_role)
               .map((item) => {
-                const isActive = pathname === item.href
+                // The merged section also owns the standalone routes it bundles,
+                // so arriving via an old link still highlights the right entry.
+                const isActive =
+                  pathname === item.href ||
+                  (item.href === "/lots-compliance" &&
+                    ["/lots", "/compliance", "/traceability"].some(
+                      (p) => pathname === p || pathname.startsWith(`${p}/`),
+                    ))
                 return (
                   <Link
                     key={item.name}
@@ -210,7 +240,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Menu className="h-6 w-6 text-stone-700" />
           </button>
           <h2 className="text-lg font-semibold text-stone-900">
-            {getNavigation(user?.role === "admin").find((item) => item.href === pathname)?.name || "Dashboard"}
+            {getNavigation(user?.role === "admin", user?.chain_role).find((item) => item.href === pathname)?.name || "Dashboard"}
           </h2>
         </header>
 
