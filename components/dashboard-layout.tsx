@@ -41,6 +41,17 @@ interface DashboardLayoutProps {
 
 const ALL_ROLES = ["operator", "transporter", "exporter", "inspector"]
 
+// Routes the merged Lots & Compliance section owns. They still exist as
+// standalone pages for links and bookmarks, so both the sidebar highlight and
+// the header title have to recognise them as belonging to that entry.
+const MERGED_SECTION = "/lots-compliance"
+const MERGED_ROUTES = ["/lots", "/compliance", "/traceability"]
+
+const ownsRoute = (href: string, pathname: string) =>
+  pathname === href ||
+  (href === MERGED_SECTION &&
+    MERGED_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`)))
+
 const getNavigation = (isAdmin: boolean, chainRole?: string) => {
   if (isAdmin) {
     // Admin navigation - different from regular users
@@ -160,14 +171,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
             {getNavigation(user?.role === "admin", user?.chain_role)
               .map((item) => {
-                // The merged section also owns the standalone routes it bundles,
-                // so arriving via an old link still highlights the right entry.
-                const isActive =
-                  pathname === item.href ||
-                  (item.href === "/lots-compliance" &&
-                    ["/lots", "/compliance", "/traceability"].some(
-                      (p) => pathname === p || pathname.startsWith(`${p}/`),
-                    ))
+                const isActive = ownsRoute(item.href, pathname)
                 return (
                   <Link
                     key={item.name}
@@ -240,7 +244,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Menu className="h-6 w-6 text-stone-700" />
           </button>
           <h2 className="text-lg font-semibold text-stone-900">
-            {getNavigation(user?.role === "admin", user?.chain_role).find((item) => item.href === pathname)?.name || "Dashboard"}
+            {getNavigation(user?.role === "admin", user?.chain_role).find((item) => ownsRoute(item.href, pathname))?.name || "Dashboard"}
           </h2>
         </header>
 
