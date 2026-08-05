@@ -39,7 +39,10 @@ export default function RootLayout({
             <SyncIndicator />
           </CurrencyProvider>
         </AuthProvider>
-        <Analytics />
+        {/* Vercel Analytics only serves /_vercel/insights/script.js on Vercel.
+            On the CapRover deployment it 404s on every page load, so only mount
+            it when the build actually happened on Vercel. */}
+        {process.env.VERCEL ? <Analytics /> : null}
       </body>
     </html>
   )
