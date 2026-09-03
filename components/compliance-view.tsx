@@ -7,6 +7,7 @@ import { ShieldCheck, Plus, Trash2, RefreshCw } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { toast } from "sonner"
 import { ComplianceBoard } from "@/components/compliance-board"
+import { toKg } from "@/lib/stock"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -930,28 +931,35 @@ function CoCLotForm({ form, setForm, onSubmit, certifications = [] }: any) {
     )
   }
 
-  const getSelectedRecordsWeight = () => {
+  // Records can be logged in different units (a pit tally in grams, a
+  // stockpile in kg) — converted to kg before summing, or "2 g + 1 kg" reads
+  // as "3 kg" instead of 1.002 kg. Matches the backend's own derivation
+  // (data/compliance.go, InsertCoCLotWithLinks) so the preview shown while
+  // picking records matches what actually gets saved.
+  const getSelectedRecordsWeightKg = () => {
     return selectedRecords.reduce((total, recordId) => {
       const record = availableRecords.find(r => parseInt(r.id) === recordId)
-      return total + (record?.quantity || 0)
+      const kg = record ? toKg(record.quantity, record.unit) : null
+      return total + (kg ?? 0)
     }, 0)
   }
 
   const getSelectedRecordsGradeInfo = () => {
-    const recordsWithGrade = selectedRecords
+    const withGrade = selectedRecords
       .map(recordId => availableRecords.find(r => parseInt(r.id) === recordId))
-      .filter(record => record?.gradeValue && record?.gradeUnit)
-    
-    if (recordsWithGrade.length === 0) return null
-    
-    const avgGrade = recordsWithGrade.reduce((sum, record) => 
-      sum + (record!.gradeValue! * record!.quantity), 0
-    ) / recordsWithGrade.reduce((sum, record) => sum + record!.quantity, 0)
-    
+      .filter((record) => Boolean(record?.gradeValue && record?.gradeUnit))
+      .map((record) => ({ record: record!, kg: toKg(record!.quantity, record!.unit) }))
+      .filter((r) => r.kg !== null) as Array<{ record: InventoryItem; kg: number }>
+
+    if (withGrade.length === 0) return null
+
+    const weightSumKg = withGrade.reduce((sum, r) => sum + r.kg, 0)
+    const avgGrade = withGrade.reduce((sum, r) => sum + r.record.gradeValue! * r.kg, 0) / weightSumKg
+
     return {
       value: avgGrade,
-      unit: recordsWithGrade[0]?.gradeUnit,
-      count: recordsWithGrade.length
+      unit: withGrade[0]?.record.gradeUnit,
+      count: withGrade.length,
     }
   }
 
@@ -1074,7 +1082,7 @@ function CoCLotForm({ form, setForm, onSubmit, certifications = [] }: any) {
         availableRecords={availableRecords}
         selectedRecords={selectedRecords}
         onRecordSelection={handleRecordSelection}
-        getSelectedRecordsWeight={getSelectedRecordsWeight}
+        getSelectedRecordsWeight={getSelectedRecordsWeightKg}
         getSelectedRecordsGradeInfo={getSelectedRecordsGradeInfo}
         mineralType={form.mineral_type}
       />

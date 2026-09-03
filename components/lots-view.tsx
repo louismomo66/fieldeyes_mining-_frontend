@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { dataService } from "@/lib/data-service"
+import { toKg } from "@/lib/stock"
 import type { CoCLot, InventoryItem, MineSiteCertification, MineralType } from "@/lib/types"
 
 // The minerals the Regulations cover (reg. 2), plus tantalum and titanium, which
@@ -118,11 +119,16 @@ export function LotsView() {
     setSelected([])
   }, [showForm, form.mineral])
 
-  const derivedWeight = useMemo(
+  // Records can be logged in different units (a pit tally in grams, a
+  // stockpile in kg) — converted to kg before summing, or "2 g + 1 kg" reads
+  // as "3 kg" instead of 1.002 kg. Always in kg regardless of `form.unit`,
+  // matching the backend's own derivation (data/compliance.go).
+  const derivedWeightKg = useMemo(
     () =>
       selected.reduce((sum, id) => {
         const rec = production.find((p) => p.id === id)
-        return sum + (rec?.quantity || 0)
+        const kg = rec ? toKg(rec.quantity, rec.unit) : null
+        return sum + (kg ?? 0)
       }, 0),
     [selected, production],
   )
@@ -155,8 +161,13 @@ export function LotsView() {
         mine_site_certification_id: cert ? Number(cert.id) : undefined,
         source_mine_site: cert?.mine_site_name || "",
         mineral_type: form.mineral,
-        weight: selected.length > 0 ? derivedWeight : Number(form.weight),
-        unit: form.unit,
+        // Sent as-is (this component computes and posts its own weight, unlike
+        // the compliance form which leaves it blank for the backend to
+        // derive) — so the unit must be forced to kg here too, or a weight
+        // that's correctly in kg gets labelled with whatever unit was left
+        // selected in the dropdown.
+        weight: selected.length > 0 ? derivedWeightKg : Number(form.weight),
+        unit: selected.length > 0 ? "kg" : form.unit,
         grade_value: form.gradeValue ? Number(form.gradeValue) : undefined,
         grade_unit: form.gradeUnit,
         seal_number: form.sealNumber || undefined,
@@ -307,7 +318,7 @@ export function LotsView() {
                       </div>
                       {selected.length > 0 && (
                         <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
-                          {selected.length} record(s) — {derivedWeight.toFixed(2)} {form.unit}
+                          {selected.length} record(s) — {derivedWeightKg.toFixed(2)} kg
                         </p>
                       )}
                     </div>
@@ -319,14 +330,21 @@ export function LotsView() {
                         <Label>{selected.length > 0 ? "Weight (auto)" : "Weight"}</Label>
                         <Input
                           type="number" min="0" step="0.0001"
-                          value={selected.length > 0 ? derivedWeight.toFixed(2) : form.weight}
+                          value={selected.length > 0 ? derivedWeightKg.toFixed(2) : form.weight}
                           onChange={(e) => setForm({ ...form, weight: e.target.value })}
                           disabled={selected.length > 0}
                         />
                       </div>
                       <div className="space-y-1">
                         <Label>Unit</Label>
-                        <Select value={form.unit} onValueChange={(v) => setForm({ ...form, unit: v })}>
+                        {/* Always kg once derived from records — mixed-unit records are
+                            converted and summed in kg, so the dropdown can't offer a
+                            different unit without relabelling an already-converted number. */}
+                        <Select
+                          value={selected.length > 0 ? "kg" : form.unit}
+                          onValueChange={(v) => setForm({ ...form, unit: v })}
+                          disabled={selected.length > 0}
+                        >
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
