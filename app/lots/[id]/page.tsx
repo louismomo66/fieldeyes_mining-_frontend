@@ -102,6 +102,10 @@ export default function LotDetailPage() {
   const transports = trace.transport_records || []
   const processing = trace.processing_records || []
   const productionRecords = trace.production_records || []
+  // The run that produced this lot, if it's an output rather than a
+  // ground-up registration — its input_lots are this lot's real origin, just
+  // one processing step removed from raw production.
+  const producedBy = processing.find((p) => p.output_lot_id != null && String(p.output_lot_id) === String(trace.id))
 
   // The chain, in order. Each step knows whether it has actually happened.
   const steps = [
@@ -109,13 +113,15 @@ export default function LotDetailPage() {
       key: "production",
       label: "Production",
       icon: MapPin,
-      done: productionRecords.length > 0,
+      done: productionRecords.length > 0 || Boolean(producedBy),
       summary: productionRecords.length
         ? `${productionRecords.length} record(s) from pit(s) ${
             Array.from(new Set(productionRecords.map((r) => r.pitNumber).filter(Boolean))).join(", ") ||
             "unrecorded"
           }`
-        : "No production records linked — origin is unverified",
+        : producedBy
+          ? `Produced by processing ${producedBy.input_lots?.length ?? 0} input lot(s) at ${producedBy.facilityName}`
+          : "No production records linked — origin is unverified",
     },
     {
       key: "custody",
@@ -140,7 +146,13 @@ export default function LotDetailPage() {
       label: "Processing",
       icon: Factory,
       done: processing.length > 0,
-      summary: processing.length ? `${processing.length} run(s)` : "No processing recorded",
+      summary: producedBy
+        ? `Output of a run consuming ${
+            producedBy.input_lots?.map((l) => l.lot_number).join(", ") || `${producedBy.input_lots?.length ?? 0} lot(s)`
+          }`
+        : processing.length
+          ? `${processing.length} run(s)`
+          : "No processing recorded",
     },
     {
       key: "export",

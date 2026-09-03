@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Package, Plus, ShieldAlert } from "lucide-react"
+import { Factory, Package, Plus, ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
 
 import { useAuth } from "@/lib/auth-context"
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -30,6 +31,8 @@ import type { CoCLot, InventoryItem, MineSiteCertification, MineralType } from "
 // The minerals the Regulations cover (reg. 2), plus tantalum and titanium, which
 // are lotted in their own right rather than only as coltan. Shown first because
 // they are the ones a chain-of-custody lot usually concerns.
+const PROCESS_TYPES = ["crushing", "milling", "washing", "smelting", "refining", "sorting"]
+
 const DESIGNATED: MineralType[] = ["gold", "tin", "tantalum", "coltan", "wolfram", "titanium"]
 
 // Everything else production can record. A lot has to be able to describe what
@@ -76,6 +79,27 @@ export function LotsView() {
   const [selected, setSelected] = useState<string[]>([])
   const [showForm, setShowForm] = useState(false)
   const [busy, setBusy] = useState(false)
+
+  // Process lots: merge one or more real input lots into one real output lot,
+  // linked on both sides — separate selection state from "Register lot"
+  // above, since that picks production records, not lots.
+  const [showProcessForm, setShowProcessForm] = useState(false)
+  const [processMineral, setProcessMineral] = useState<MineralType>("gold")
+  const [processSelected, setProcessSelected] = useState<string[]>([])
+  const [processBusy, setProcessBusy] = useState(false)
+  const [processForm, setProcessForm] = useState({
+    facilityName: "",
+    processType: "smelting",
+    operator: "",
+    supervisor: "",
+    duration: "",
+    wasteGenerated: "",
+    outputWeight: "",
+    outputGradeValue: "",
+    outputGradeUnit: "",
+    sealNumber: "",
+    qualityNotes: "",
+  })
 
   const [form, setForm] = useState({
     certId: "",
@@ -140,6 +164,85 @@ export function LotsView() {
 
   const toggle = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+
+  // Lots eligible as processing input: not exported, not already consumed by
+  // an earlier run, and matching the chosen mineral (a run can't blend two
+  // different designated minerals — the backend rejects that too).
+  const eligibleForProcessing = (lots ?? []).filter(
+    (l) => !l.is_exported && l.tracking_state !== "processing" && l.mineral_type === processMineral,
+  )
+
+  const toggleProcess = (id: string) =>
+    setProcessSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+
+  // Same rule as derivedWeightKg above: lots can be in different units, so
+  // this is always a kg total regardless of any one lot's own unit.
+  const processInputKg = useMemo(
+    () =>
+      processSelected.reduce((sum, id) => {
+        const lot = eligibleForProcessing.find((l) => l.id === id)
+        const kg = lot ? toKg(lot.weight, lot.unit) : null
+        return sum + (kg ?? 0)
+      }, 0),
+    [processSelected, eligibleForProcessing],
+  )
+
+  const wasteKg = Number(processForm.wasteGenerated) || 0
+  const computedOutputKg = Math.max(processInputKg - wasteKg, 0)
+  const outputKg = processForm.outputWeight ? Number(processForm.outputWeight) : computedOutputKg
+  const processMassBalanceBroken = processInputKg > 0 && outputKg + wasteKg > processInputKg + 0.0001
+
+  const submitProcessing = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (processSelected.length === 0) {
+      toast.error("Select at least one input lot")
+      return
+    }
+    if (!processForm.facilityName.trim()) {
+      toast.error("Facility is required")
+      return
+    }
+    if (processMassBalanceBroken) {
+      toast.error("Output plus waste cannot exceed the total input weight")
+      return
+    }
+
+    setProcessBusy(true)
+    try {
+      const result = await dataService.createProcessingRun({
+        input_lot_ids: processSelected.map(Number).filter((n) => !Number.isNaN(n)),
+        facility_name: processForm.facilityName.trim(),
+        process_type: [processForm.processType],
+        operator: processForm.operator || undefined,
+        supervisor: processForm.supervisor || undefined,
+        duration: processForm.duration ? Number(processForm.duration) : undefined,
+        waste_generated: wasteKg,
+        output_weight: processForm.outputWeight ? Number(processForm.outputWeight) : undefined,
+        output_grade_value: processForm.outputGradeValue ? Number(processForm.outputGradeValue) : undefined,
+        output_grade_unit: processForm.outputGradeUnit || undefined,
+        seal_number: processForm.sealNumber || undefined,
+        quality_notes: processForm.qualityNotes || undefined,
+      })
+      if (!result.ok) {
+        toast.error(result.error || "Failed to record processing")
+        return
+      }
+      toast.success(
+        result.outputLot
+          ? `Processing recorded — output lot ${result.outputLot.lot_number} created`
+          : "Processing recorded",
+      )
+      setShowProcessForm(false)
+      setProcessSelected([])
+      setProcessForm((f) => ({ ...f, wasteGenerated: "", outputWeight: "", sealNumber: "", qualityNotes: "" }))
+      await load()
+      if (result.outputLot) router.push(`/lots/${result.outputLot.id}`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to record processing")
+    } finally {
+      setProcessBusy(false)
+    }
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -216,11 +319,223 @@ export function LotsView() {
               Every lot you own or currently hold, from pit to export
             </p>
           </div>
-          <Button onClick={() => setShowForm(!showForm)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Register lot
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowProcessForm(!showProcessForm)}
+              className="gap-2"
+            >
+              <Factory className="h-4 w-4" />
+              Process lots
+            </Button>
+            <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Register lot
+            </Button>
+          </div>
         </div>
+
+        {showProcessForm && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Process lots</CardTitle>
+              <p className="text-sm text-stone-600">
+                Merge one or more lots into a single output batch — the output carries the
+                combined weight and inherits the most restrictive site status of its inputs.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={submitProcessing} className="space-y-4">
+                <div className="space-y-1">
+                  <Label>Mineral</Label>
+                  <Select
+                    value={processMineral}
+                    onValueChange={(v) => {
+                      setProcessMineral(v as MineralType)
+                      setProcessSelected([])
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Designated minerals</SelectLabel>
+                        {DESIGNATED.map((m) => (
+                          <SelectItem key={m} value={m} className="capitalize">{mineralLabel(m)}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectLabel>Other minerals captured in production</SelectLabel>
+                        {OTHER_MINERALS.map((m) => (
+                          <SelectItem key={m} value={m} className="capitalize">{mineralLabel(m)}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="rounded-lg border bg-stone-50 p-3">
+                  <p className="mb-2 text-sm font-medium text-stone-700">
+                    Select the input lots this run consumes
+                  </p>
+                  {eligibleForProcessing.length === 0 ? (
+                    <p className="text-sm text-stone-600">
+                      No {processMineral} lots available to process — they must not be already
+                      exported or already consumed by another run.
+                    </p>
+                  ) : (
+                    <div className="max-h-40 space-y-1 overflow-y-auto">
+                      {eligibleForProcessing.map((lot) => (
+                        <label
+                          key={lot.id}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg bg-white p-2.5 hover:bg-stone-100"
+                        >
+                          <Checkbox
+                            checked={processSelected.includes(lot.id)}
+                            onCheckedChange={() => toggleProcess(lot.id)}
+                          />
+                          <span className="min-w-0 flex-1 text-xs">
+                            <span className="block font-medium text-stone-900">
+                              {lot.lot_number} — {lot.weight} {lot.unit}
+                            </span>
+                            <span className="block text-stone-500">
+                              {lot.source_mine_site} • {lot.mine_site_status}
+                              {lot.current_custodian ? ` • held by ${lot.current_custodian}` : ""}
+                            </span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {processSelected.length > 0 && (
+                    <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
+                      {processSelected.length} lot(s) — {processInputKg.toFixed(2)} kg total input
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label>Facility</Label>
+                    <Input
+                      value={processForm.facilityName}
+                      onChange={(e) => setProcessForm({ ...processForm, facilityName: e.target.value })}
+                      placeholder="e.g. Kampala Refinery"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Process</Label>
+                    <Select
+                      value={processForm.processType}
+                      onValueChange={(v) => setProcessForm({ ...processForm, processType: v })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PROCESS_TYPES.map((t) => (
+                          <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label>Operator (optional)</Label>
+                    <Input
+                      value={processForm.operator}
+                      onChange={(e) => setProcessForm({ ...processForm, operator: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Supervisor (optional)</Label>
+                    <Input
+                      value={processForm.supervisor}
+                      onChange={(e) => setProcessForm({ ...processForm, supervisor: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Waste (kg)</Label>
+                    <Input
+                      type="number" min="0" step="0.01"
+                      value={processForm.wasteGenerated}
+                      onChange={(e) => setProcessForm({ ...processForm, wasteGenerated: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Output weight (auto if blank)</Label>
+                    <Input
+                      type="number" min="0" step="0.01"
+                      value={processForm.outputWeight}
+                      onChange={(e) => setProcessForm({ ...processForm, outputWeight: e.target.value })}
+                      placeholder={computedOutputKg > 0 ? computedOutputKg.toFixed(2) : "e.g. 2.8"}
+                    />
+                  </div>
+                </div>
+                {processInputKg > 0 && (
+                  <p className={`text-sm ${processMassBalanceBroken ? "text-red-600" : "text-stone-600"}`}>
+                    {processMassBalanceBroken
+                      ? `Output + waste (${(outputKg + wasteKg).toFixed(2)} kg) exceeds total input (${processInputKg.toFixed(2)} kg)`
+                      : `Output ${outputKg.toFixed(2)} kg — yield ${((outputKg / processInputKg) * 100).toFixed(1)}%`}
+                  </p>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Output grade (optional)</Label>
+                    <Input
+                      type="number" min="0" step="0.0001"
+                      value={processForm.outputGradeValue}
+                      onChange={(e) => setProcessForm({ ...processForm, outputGradeValue: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Grade unit</Label>
+                    <Select
+                      value={processForm.outputGradeUnit || gradeUnitsFor(processMineral)[0]}
+                      onValueChange={(v) => setProcessForm({ ...processForm, outputGradeUnit: v })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {gradeUnitsFor(processMineral).map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Seal number (optional)</Label>
+                  <Input
+                    value={processForm.sealNumber}
+                    onChange={(e) => setProcessForm({ ...processForm, sealNumber: e.target.value })}
+                    placeholder="Physical seal/tag ID for the output batch"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Quality notes (optional)</Label>
+                  <Textarea
+                    value={processForm.qualityNotes}
+                    onChange={(e) => setProcessForm({ ...processForm, qualityNotes: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={processBusy || processMassBalanceBroken}>
+                    {processBusy ? "Recording…" : "Record processing"}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setShowProcessForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         {showForm && (
           <Card>

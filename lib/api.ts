@@ -426,6 +426,16 @@ class ApiService {
     })
   }
 
+  // Merge real input lots into one real output lot, linked on both sides —
+  // distinct from createProcessingRecord, which logs a processing note with
+  // no link to any actual lot.
+  async createProcessingRun(data: ComplianceRequest): Promise<ApiResponse> {
+    return this.makeRequest('/compliance/processing-runs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
   async getExportShipments(): Promise<ApiResponse> {
     return this.makeRequest('/compliance/export-shipments/')
   }

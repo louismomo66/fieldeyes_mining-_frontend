@@ -451,6 +451,11 @@ export interface ProcessingRecord {
   user_id: string
   created_at: Date
   updated_at: Date
+  // Real, linked lots (as opposed to inputBatches/output.outputItems above,
+  // which are a free-typed JSON note with no link to any actual CoCLot) —
+  // set when this run was created via createProcessingRun.
+  input_lots?: CoCLot[]
+  output_lot_id?: number
 }
 
 // Real-time Tracking Types

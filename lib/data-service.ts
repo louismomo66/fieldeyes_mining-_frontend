@@ -515,6 +515,33 @@ export class DataService {
     return { ok: true, toName: (response.data as any)?.to_name }
   }
 
+  /**
+   * Merge real input lots into one real, linked output lot. Distinct from
+   * createProcessingRecord below, which logs a processing note with no link
+   * to any actual lot — every processing record created through the older
+   * forms was disconnected from the lots it claimed to consume.
+   */
+  async createProcessingRun(payload: {
+    input_lot_ids: number[]
+    facility_name: string
+    process_type: string[]
+    operator?: string
+    supervisor?: string
+    duration?: number
+    samples_collected?: number
+    quality_notes?: string
+    output_weight?: number
+    waste_generated?: number
+    output_grade_value?: number
+    output_grade_unit?: string
+    seal_number?: string
+  }): Promise<{ ok: boolean; error?: string; outputLot?: CoCLot }> {
+    const response = await apiService.createProcessingRun(payload)
+    if (!response.success) return { ok: false, error: response.error }
+    const outputLot = (response.data as any)?.output_lot
+    return { ok: true, outputLot: outputLot ? this.transformComplianceDates(outputLot) : undefined }
+  }
+
   async getExportShipments(): Promise<ExportShipment[]> {
     const response = await apiService.getExportShipments()
     return response.success && response.data ? response.data.map((item: any) => this.transformComplianceDates(item)) : []
@@ -1032,7 +1059,15 @@ export class DataService {
       status: data.status,
       user_id: data.user_id?.toString() || '',
       created_at: new Date(data.created_at),
-      updated_at: new Date(data.updated_at)
+      updated_at: new Date(data.updated_at),
+      // Real linked lots, when this run was created via createProcessingRun —
+      // passed through untouched rather than dropped like the legacy JSON
+      // blobs above, so a lot's own passport can show what actually produced
+      // or consumed it instead of just "no production records linked".
+      input_lots: Array.isArray(data.input_lots)
+        ? data.input_lots.map((l: any) => this.transformComplianceDates(l))
+        : undefined,
+      output_lot_id: data.output_lot_id,
     }
   }
 
