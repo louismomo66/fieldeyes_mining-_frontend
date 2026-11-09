@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Loader2, Users, Shield, TrendingUp, TrendingDown, BarChart3, Eye, FileText, Activity, DollarSign } from "lucide-react"
 import { dataService } from "@/lib/data-service"
+import { CHAIN_ROLE_ORDER, chainRoleBadgeClass, chainRoleLabel } from "@/lib/chain-roles"
 import { useToast } from "@/hooks/use-toast"
 import {
   BarChart,
@@ -36,6 +37,7 @@ interface UserCategory {
     name: string
     phone?: string
     role: string
+    chain_role?: string
     created_at: string
   }
   category: string
@@ -168,6 +170,15 @@ export default function AdminPage() {
   const buyers = users.filter(u => u.category === "buyer")
   const sellers = users.filter(u => u.category === "seller")
   const unknown = users.filter(u => u.category === "unknown")
+
+  // Account type = the supply-chain role picked at signup. Admins are listed
+  // separately: they have no chain role, and "No role set" is for older accounts.
+  const accountTypeCounts = CHAIN_ROLE_ORDER.map(role => ({
+    role,
+    count: users.filter(u => u.user.role !== "admin" && u.user.chain_role === role).length,
+  }))
+  const adminCount = users.filter(u => u.user.role === "admin").length
+  const noRoleCount = users.filter(u => u.user.role !== "admin" && !u.user.chain_role).length
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -325,7 +336,32 @@ export default function AdminPage() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="border-stone-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-stone-600">Account Types</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {accountTypeCounts.map(({ role, count }) => (
+                      <div key={role} className="flex justify-between items-center">
+                        <span className="text-stone-600">{chainRoleLabel(role)}s</span>
+                        <Badge variant="outline" className={chainRoleBadgeClass(role)}>{count}</Badge>
+                      </div>
+                    ))}
+                    {noRoleCount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-stone-600">No role set</span>
+                        <Badge variant="outline" className={chainRoleBadgeClass(null)}>{noRoleCount}</Badge>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center border-t border-stone-100 pt-2">
+                      <span className="text-stone-600">Administrators</span>
+                      <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-200">{adminCount}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
               <Card className="border-stone-200">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-stone-600">User Categories</CardTitle>
@@ -506,7 +542,7 @@ export default function AdminPage() {
                           <th className="p-3 text-left font-medium text-stone-900">Email</th>
                           <th className="p-3 text-left font-medium text-stone-900">Phone</th>
                           <th className="p-3 text-left font-medium text-stone-900">Category</th>
-                          <th className="p-3 text-left font-medium text-stone-900">Role</th>
+                          <th className="p-3 text-left font-medium text-stone-900">Account Type</th>
                           <th className="p-3 text-left font-medium text-stone-900">Joined</th>
                         </tr>
                       </thead>
@@ -530,9 +566,15 @@ export default function AdminPage() {
                               </Badge>
                             </td>
                             <td className="p-3 whitespace-nowrap">
-                              <Badge variant="outline" className={userCategory.user.role === "admin" ? "bg-purple-100 text-purple-700 border-purple-200" : "bg-stone-100 text-stone-700 border-stone-200"}>
-                                {userCategory.user.role}
-                              </Badge>
+                              {userCategory.user.role === "admin" ? (
+                                <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-200">
+                                  Administrator
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className={chainRoleBadgeClass(userCategory.user.chain_role)}>
+                                  {chainRoleLabel(userCategory.user.chain_role)}
+                                </Badge>
+                              )}
                             </td>
                             <td className="p-3 text-stone-600 text-xs whitespace-nowrap">
                               {new Date(userCategory.user.created_at).toLocaleDateString()}
@@ -839,10 +881,16 @@ export default function AdminPage() {
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-stone-500">Role</p>
-                      <Badge variant="outline" className={selectedUser.user.role === "admin" ? "bg-purple-100 text-purple-700 border-purple-200" : "bg-stone-100 text-stone-700 border-stone-200"}>
-                        {selectedUser.user.role}
-                      </Badge>
+                      <p className="text-stone-500">Account Type</p>
+                      {selectedUser.user.role === "admin" ? (
+                        <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-200">
+                          Administrator
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className={chainRoleBadgeClass(selectedUser.user.chain_role)}>
+                          {chainRoleLabel(selectedUser.user.chain_role)}
+                        </Badge>
+                      )}
                     </div>
                     <div className="col-span-2">
                       <p className="text-stone-500">Joined</p>

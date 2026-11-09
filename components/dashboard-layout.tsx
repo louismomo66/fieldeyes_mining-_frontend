@@ -6,6 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { chainRoleLabel } from "@/lib/chain-roles"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -206,7 +207,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <p className="text-sm font-medium text-stone-900">{user?.name}</p>
                     <p className="text-xs text-stone-600 flex items-center gap-1">
                       {user?.role === "admin" && <Shield className="h-3 w-3" />}
-                      {user?.role === "admin" ? "Administrator" : "Standard User"}
+                      {/* Show the role they signed up as; "Standard User" only for
+                          legacy accounts that predate supply-chain roles. */}
+                      {user?.role === "admin"
+                        ? "Administrator"
+                        : user?.chain_role
+                          ? chainRoleLabel(user.chain_role)
+                          : "Standard User"}
                     </p>
                   </div>
                 </Button>

@@ -7,6 +7,8 @@ import { useCurrency } from "@/lib/currency-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { chainRoleBadgeClass, chainRoleLabel } from "@/lib/chain-roles"
 import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Package } from "lucide-react"
 import { dataService } from "@/lib/data-service"
 import type { FinancialSummary, Income, Expense, InventoryItem } from "@/lib/types"
@@ -176,7 +178,14 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-stone-900">Dashboard</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-bold text-stone-900">Dashboard</h1>
+            {user?.chain_role && (
+              <Badge variant="outline" className={chainRoleBadgeClass(user.chain_role)}>
+                {chainRoleLabel(user.chain_role)}
+              </Badge>
+            )}
+          </div>
           <p className="text-stone-600">
             Overview of your mining operations - Your central hub for monitoring performance
           </p>
