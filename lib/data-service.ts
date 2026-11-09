@@ -505,6 +505,7 @@ export class DataService {
       chain_complete: passport.chain_complete ?? false,
       export_shipment: passport.export_shipment,
       alerts: passport.alerts || [],
+      can_act: passport.can_act ?? true,
     } as EnhancedCoCLot
   }
 

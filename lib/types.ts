@@ -206,6 +206,8 @@ export interface CoCLot {
   transporter_name?: string
   transport_route?: string
   current_custodian?: string
+  // Set once a lot has been handed over; absent while the owner still holds it.
+  current_custodian_user_id?: number
   upstream_actors?: string
   taxes_fees_royalties?: string
   verification_officer?: string
@@ -498,6 +500,9 @@ export interface EnhancedCoCLot extends Omit<CoCLot, 'production_records'> {
   compliance_documents: ComplianceDocument[]
   photos: PhotoRecord[]
   qr_code: string
+  // False when the viewer is a past custodian reading history (they handed the
+  // lot on). Undefined from older servers is treated as true.
+  can_act?: boolean
 }
 
 export interface CustodyTransfer {

@@ -647,14 +647,14 @@ function CustodyChain({ trace, onRecorded }: { trace: EnhancedCoCLot; onRecorded
           <p>No custody transfers recorded yet</p>
           <p className="text-sm">Hand the lot over to record the first transfer</p>
         </div>
-        <HandoverForm trace={trace} onRecorded={onRecorded} />
+        {trace.can_act !== false && <HandoverForm trace={trace} onRecorded={onRecorded} />}
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <HandoverForm trace={trace} onRecorded={onRecorded} />
+      {trace.can_act !== false && <HandoverForm trace={trace} onRecorded={onRecorded} />}
       {transfers.map((transfer, index) => (
         <div key={transfer.id} className="border rounded-lg p-4">
           <div className="flex items-center justify-between">
@@ -836,14 +836,14 @@ function TransportHistory({ trace, onRecorded }: { trace: EnhancedCoCLot; onReco
           <p>No transport records found</p>
           <p className="text-sm">Record a movement to start the transport leg</p>
         </div>
-        <TransportForm trace={trace} onRecorded={onRecorded} />
+        {trace.can_act !== false && <TransportForm trace={trace} onRecorded={onRecorded} />}
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <TransportForm trace={trace} onRecorded={onRecorded} />
+      {trace.can_act !== false && <TransportForm trace={trace} onRecorded={onRecorded} />}
       {transports.map((transport) => (
         <div key={transport.id} className="border rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4">
@@ -1072,14 +1072,14 @@ function ProcessingHistory({ trace, onRecorded }: { trace: EnhancedCoCLot; onRec
           <p>No processing records found</p>
           <p className="text-sm">Record a run to log a transformation</p>
         </div>
-        <ProcessingForm trace={trace} onRecorded={onRecorded} />
+        {trace.can_act !== false && <ProcessingForm trace={trace} onRecorded={onRecorded} />}
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <ProcessingForm trace={trace} onRecorded={onRecorded} />
+      {trace.can_act !== false && <ProcessingForm trace={trace} onRecorded={onRecorded} />}
       {processing.map((process) => (
         <div key={process.id} className="border rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4">

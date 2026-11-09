@@ -403,7 +403,9 @@ export function ComplianceView() {
                 detail: [lot.coc_system, lot.seal_number ? `Seal: ${lot.seal_number}` : '', lot.tracking_state ? `State: ${lot.tracking_state}` : '', lot.is_exported ? 'EXPORTED' : ''].filter(Boolean).join(' • '),
                 traceable: true,
                 verifyCode: lot.verify_code,
-                handover: true,
+                // Only the current holder can hand a lot on. The owner keeps seeing
+                // a lot after handing it over, so check who holds it now.
+                handover: lot.current_custodian_user_id == null || String(lot.current_custodian_user_id) === String(user?.id),
               }))}
               onHandover={loadCompliance}
               onDelete={async (id) => removeRecord(id, dataService.deleteCoCLot.bind(dataService), setLots, lots)}

@@ -98,6 +98,9 @@ export default function LotDetailPage() {
       ? `${window.location.origin}/verify/${trace.verify_code}`
       : ""
 
+  // False for someone who handed the lot on: they keep read access to its
+  // history but no longer hold it, so the action buttons would only error.
+  const canAct = trace.can_act !== false
   const custody = trace.custody_chain || []
   const transports = trace.transport_records || []
   const processing = trace.processing_records || []
@@ -217,7 +220,15 @@ export default function LotDetailPage() {
               })}
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            {!canAct && (
+              <p className="mt-4 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-600">
+                You are viewing this lot's history. Custody now sits with{" "}
+                <span className="font-medium text-stone-900">{trace.current_custodian || "another party"}</span>
+                , so only they can hand it on or record new activity.
+              </p>
+            )}
+
+            {canAct && <div className="mt-4 flex flex-wrap gap-2">
               <Button size="sm" variant="outline" className="gap-2" onClick={() => setAction("handover")}>
                 <ArrowRight className="h-4 w-4" /> Hand over custody
               </Button>
@@ -227,7 +238,7 @@ export default function LotDetailPage() {
               <Button size="sm" variant="outline" className="gap-2" onClick={() => setAction("processing")}>
                 <Factory className="h-4 w-4" /> Record processing
               </Button>
-            </div>
+            </div>}
 
             {action === "handover" && <HandoverForm lotId={trace.id} onDone={refresh} />}
             {action === "transport" && <QuickTransportForm lotId={trace.id} onDone={refresh} />}
